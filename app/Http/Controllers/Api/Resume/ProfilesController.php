@@ -138,7 +138,7 @@ class ProfilesController extends Controller
                 'phone' => $profile->phone,
                 'email' => $profile->email,
                 'birthday' => $profile->birthday,
-                'gender' => $profile->gender,
+                'gender' => $profile->gender == 1 ? 'Male' : 'Female',
                 'location' => $profile->location,
                 'website' => $profile->website,
                 'image_url' => url('uploads/images/' . $profile->image), // Xây dựng URL của hình ảnh
