@@ -16,8 +16,8 @@ class ProfilesController extends Controller
      */
     public function index()
     {
-        $user = User::where("id", auth()->user()->id)->firstOrFail();
-        $profile = Profile::where("users_id", $user->id)->get();
+        $user =  auth()->user();
+        $profile = $user->profile;
         $profilesData = $profile->map(function ($profile) {
             return [
                 'title' => $profile->title,
@@ -46,8 +46,9 @@ class ProfilesController extends Controller
     public function store(Request $request)
     {
         // Tìm profile của người dùng hiện tại
-        $profile = Profile::where('users_id', auth()->user()->id)->first();
+        $user =  auth()->user();
 
+        $profile = $user->profile;
         // Nếu không có profile tồn tại, tạo mới
         if (!$profile) {
             // Thực hiện validation
@@ -127,8 +128,21 @@ class ProfilesController extends Controller
             $profile->users_id = auth()->user()->id;
             $profile->save();
 
+
             // Gán dữ liệu đã cập nhật
-            $data = $profile->toArray();
+            $data = [
+                'users_id' => $profile->users_id,
+                'id' => $profile->id,
+                'name' => $profile->name,
+                'title' => $profile->title,
+                'phone' => $profile->phone,
+                'email' => $profile->email,
+                'birthday' => $profile->birthday,
+                'gender' => $profile->gender,
+                'location' => $profile->location,
+                'website' => $profile->website,
+                'image_url' => url('uploads/images/' . $profile->image), // Xây dựng URL của hình ảnh
+            ];
         }
 
         return response()->json([
