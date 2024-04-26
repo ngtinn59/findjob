@@ -196,4 +196,27 @@ class ProfilesController extends Controller
             'status_code' => 200
         ]);
     }
+
+    public function download_cv() {
+        $user = User::where("id", auth()->user()->id)->firstOrFail();
+
+        $cv=  Cv::where('users_id', $user->id)->where('is_default', 1)->firstOrFail();
+
+        $fileName = $cv->file_path;
+        $filePath = public_path('cvs/' . $fileName);
+
+        if (file_exists($filePath)) {
+            $fileContent = file_get_contents($filePath);
+
+            return Response::make($fileContent, 200, [
+                'Content-Disposition' => 'attachment; filename="'. $fileName. '"',
+                'Content-Type' => 'application/octet-stream',
+            ]);
+        } else {
+            abort(404, 'File not found');
+        }
+    }
+    
 }
+
+
