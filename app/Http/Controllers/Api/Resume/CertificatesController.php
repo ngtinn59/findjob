@@ -81,11 +81,19 @@ class CertificatesController extends Controller
 
         $data = $validator->validated();
         $certificate = Certificate::create($data);
+        $data = [
+            'title' => $certificate->title,
+            'provider' => $certificate->provider,
+            'issueDate' => $certificate->issueDate,
+            'description' => $certificate->description,
+            'certificateUrl' => $certificate->certificateUrl,
+            'id' => $certificate->id
+        ];
 
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $certificate
+            "data" => $data
         ]);
     }
 

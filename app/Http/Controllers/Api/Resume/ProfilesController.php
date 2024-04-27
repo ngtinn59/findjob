@@ -8,6 +8,10 @@ use App\Models\User;
 use App\Utillities\Common;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\URL;
+use App\Models\Cv;
+
 
 class ProfilesController extends Controller
 {
@@ -16,8 +20,8 @@ class ProfilesController extends Controller
      */
     public function index()
     {
-        $user =  auth()->user();
-        $profile = $user->profile;
+        $user = User::where("id", auth()->user()->id)->firstOrFail();
+        $profile = Profile::where("users_id", $user->id)->get();
         $profilesData = $profile->map(function ($profile) {
             return [
                 'title' => $profile->title,
@@ -39,6 +43,7 @@ class ProfilesController extends Controller
             'status_code' => 200
         ]);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -216,7 +221,7 @@ class ProfilesController extends Controller
             abort(404, 'File not found');
         }
     }
-    
+
 }
 
 

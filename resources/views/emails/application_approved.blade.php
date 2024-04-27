@@ -1,15 +1,14 @@
 <!-- resources/views/emails/application_approved.blade.php -->
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Approved</title>
+    <title>Đơn Ứng Tuyển Đã Được Chấp Nhận</title>
 </head>
 <body>
-<h1>Your Application Has Been Approved!</h1>
-<p>Congratulations! Your application has been approved. We are excited to welcome you aboard.</p>
-<!-- Thêm nội dung khác tùy theo nhu cầu -->
+<h1>Đơn Ứng Tuyển Của Bạn Đã Được Chấp Nhận!</h1>
+<p>Xin chúc mừng! Đơn ứng tuyển của bạn đã được chấp nhận. Chúng tôi rất hào hứng chào đón bạn.</p>
 </body>
 </html>

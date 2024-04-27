@@ -56,7 +56,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/download-cv', [profilesController::class, 'download_cv']);
+    Route::get('/download-cv', [ProfilesController::class, 'download_cv']);
     Route::resource('profile', ProfilesController::class);
     Route::resource('profiles/educations', EducationController::class);
     Route::resource('profiles/skills', SkillsController::class);
