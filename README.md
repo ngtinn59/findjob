@@ -14,3 +14,5 @@
 - **Link Drive**: [Drive Link](https://drive.google.com/file/d/1ne18eqa7bhZ0O8zQKqe4byYgzWaadI-f/view)
 
 **Link API Deploy:** [API Deploy Link](http://20.212.246.49/api/countries)
+
+**Link Slide Báo cáo:** [Slide](https://www.canva.com/design/DAGDhAD8K-4/XY7H4xQ30hsrozfU_DS3_g/view?utm_content=DAGDhAD8K-4&utm_campaign=designshare&utm_medium=link&utm_source=editor)
