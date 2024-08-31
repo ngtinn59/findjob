@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\Resume\CvsController;
 use App\Http\Controllers\Api\Resume\EducationController;
 use App\Http\Controllers\Api\Resume\ExperiencesController;
 use App\Http\Controllers\Api\Resume\GetResumeController;
-use App\Http\Controllers\Api\Resume\profilesController;
+use App\Http\Controllers\Api\Resume\ProfilesController;
 use App\Http\Controllers\Api\Resume\ProjectsController;
 use App\Http\Controllers\Api\Resume\SkillsController;
 use App\Http\Controllers\Api\User\UserJobController;
