@@ -15,13 +15,22 @@ class CountriesController extends Controller
      */
     public function index()
     {
-        $country = Country::all();
-        return response()->json([
-            'success'   => true,
-            'message'   => "success",
-            "data" => $country,
-            'status_code' => 200
-        ]);
+        try {
+            $countries = Country::all();
+            return response()->json([
+                'success' => true,
+                'message' => "success",
+                "data" => $countries,
+                'status_code' => 200
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching countries: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch countries',
+                'status_code' => 500
+            ], 500);
+        }
     }
 
     /**

@@ -325,24 +325,31 @@ class JobsController extends Controller
 
     public function jobRecommend(Job $job)
     {
-        $currentJobSkills = $job->skill->pluck('name')->toArray();
+        $currentJobSkills = $this->getJobSkills($job);
+        $otherJobs = $this->getOtherJobs($job->id);
 
-        // Lấy tất cả các công việc khác từ cơ sở dữ liệu
-        $otherJobs = Job::with('skill')->where('id', '!=', $job->id)->get();
-
-        // Lọc các công việc khác để chỉ chọn những công việc có ít nhất một kỹ năng giống với công việc hiện tại
+        // Filter jobs to include only those with at least one matching skill
         $recommendedJobs = $otherJobs->filter(function ($otherJob) use ($currentJobSkills) {
-            // Lấy kỹ năng của công việc khác
-
-            $otherJobSkills = $otherJob->skill->pluck('name')->toArray();
-
-            // Kiểm tra xem công việc khác có chứa ít nhất một kỹ năng của công việc hiện tại không
-            $hasSkill = count(array_intersect($currentJobSkills, $otherJobSkills)) > 0;
-
-            return $hasSkill;
+            $otherJobSkills = $this->getJobSkills($otherJob);
+            return $this->hasMatchingSkills($currentJobSkills, $otherJobSkills);
         });
 
         return $recommendedJobs;
+    }
+
+    private function getJobSkills(Job $job)
+    {
+        return $job->skill->pluck('name')->toArray();
+    }
+
+    private function getOtherJobs($jobId)
+    {
+        return Job::with('skill')->where('id', '!=', $jobId)->get();
+    }
+
+    private function hasMatchingSkills(array $currentJobSkills, array $otherJobSkills)
+    {
+        return count(array_intersect($currentJobSkills, $otherJobSkills)) > 0;
     }
 
     public function apply(Request $request, $id)
@@ -433,27 +440,22 @@ class JobsController extends Controller
     }
 
 
-
-
     public function search(Request $request)
     {
         $searchQuery = $request->input('query', '');
 
-        // If the search query is empty, return all jobs
         if (empty($searchQuery)) {
             return $this->index();
         }
 
-        // Search for jobs where the title or description contains the search query
-        // You can adjust the fields you wish to search in
+        $searchColumns = ['title', 'description', 'address', 'benefits', 'last_date', 'salary', 'skill_experience'];
+
         $jobs = Job::with('jobtype', 'skill', 'company')
-            ->where('title', 'like', "%{$searchQuery}%")
-            ->orWhere('description', 'like', "%{$searchQuery}%")
-            ->orWhere('address', 'like', "%{$searchQuery}%")
-            ->orWhere('benefits', 'like', "%{$searchQuery}%")
-            ->orWhere('last_date', 'like', "%{$searchQuery}%")
-            ->orWhere('salary', 'like', "%{$searchQuery}%")
-            ->orWhere('skill_experience', 'like', "%{$searchQuery}%")
+            ->where(function ($query) use ($searchQuery, $searchColumns) {
+                foreach ($searchColumns as $column) {
+                    $query->orWhere($column, 'like', "%{$searchQuery}%");
+                }
+            })
             ->orWhereHas('jobcity', function ($query) use ($searchQuery) {
                 $query->where('name', 'like', "%{$searchQuery}%");
             })
@@ -468,22 +470,8 @@ class JobsController extends Controller
             })
             ->paginate(5);
 
-        // Transform the jobs as done in the index method or any other preferred format
-        $jobsData = $jobs->map(function ($job) {
-            return [
-                'id' => $job->id,
-                'title' => $job->title,
-                'company' => $job->company ? $job->company->name : null,
-                'salary' => $job->salary,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->address,
-                'last_date' => $job->last_date,
-                'created_at' => $job->created_at->diffForHumans(),
-            ];
-        });
+        $jobsData = $this->mapJobs($jobs);
 
-        // Return the search results
         return response()->json([
             'success' => true,
             'message' => 'Search results',
@@ -496,6 +484,23 @@ class JobsController extends Controller
             ],
             'status_code' => 200
         ]);
+    }
+
+    private function mapJobs($jobs)
+    {
+        return $jobs->map(function ($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'company' => $job->company ? $job->company->name : null,
+                'salary' => $job->salary,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'skills' => $job->skill->pluck('name')->toArray(),
+                'address' => $job->address,
+                'last_date' => $job->last_date,
+                'created_at' => $job->created_at->diffForHumans(),
+            ];
+        });
     }
 
     /**
@@ -616,43 +621,59 @@ class JobsController extends Controller
 
     public function suggestJobs(Request $request)
     {
-        // Lấy người dùng hiện tại
-        $user = Auth::guard('sanctum')->user();
-
-        // Kiểm tra xem người dùng có tồn tại không
+        $user = $this->getAuthenticatedUser();
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-                'status_code' => 401
-            ], 401);
+            return $this->unauthorizedResponse();
         }
 
-        // Lấy danh sách kỹ năng của người dùng
-        $userSkills = $user->profile->skills()->pluck('name')->toArray();
+        $userSkills = $user->getProfileSkills();
+        $suggestedJobs = $this->getSuggestedJobs($userSkills);
+        $formattedJobs = $this->formatJobSuggestions($suggestedJobs);
 
-        // Tìm các công việc có chứa ít nhất một trong các kỹ năng của người dùng
-        $suggestedJobs = Job::whereHas('skill', function ($query) use ($userSkills) {
+        return $this->successfulResponse($formattedJobs);
+    }
+
+    private function getAuthenticatedUser()
+    {
+        return Auth::guard('sanctum')->user();
+    }
+
+    private function unauthorizedResponse()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized',
+            'status_code' => 401
+        ], 401);
+    }
+
+    private function getSuggestedJobs(array $userSkills)
+    {
+        return Job::whereHas('skill', function ($query) use ($userSkills) {
             $query->whereIn('name', $userSkills);
         })->inRandomOrder()->take(5)->get();
+    }
 
-        // Format dữ liệu của các công việc gợi ý
-        $formattedJobs = $suggestedJobs->map(function ($job) {
+    private function formatJobSuggestions($suggestedJobs)
+    {
+        return $suggestedJobs->map(function ($job) {
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'company' => $job->company ? $job->company->name : null,
+                'company' => optional($job->company)->name,
                 'salary' => $job->salary,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+                'job_type' => optional($job->jobtype)->pluck('name')->toArray(),
+                'job_city' => optional($job->jobcity)->pluck('name')->toArray(),
                 'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->company->address,
+                'address' => optional($job->company)->address,
                 'last_date' => $job->last_date,
                 'created_at' => $job->created_at->diffForHumans(),
             ];
         });
+    }
 
-        // Trả về kết quả gợi ý công việc dưới dạng JSON
+    private function successfulResponse($formattedJobs)
+    {
         return response()->json([
             'success' => true,
             'message' => 'Suggested jobs retrieved successfully',
@@ -665,69 +686,86 @@ class JobsController extends Controller
     {
         // If the job does not exist, return a 404 response
         if (!$job) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Job not found',
-                'status_code' => 404
-            ]);
+            return $this->errorResponse('Job not found', 404);
         }
 
         try {
             $job->load('jobtype', 'skill', 'company', 'jobcity');
 
-            // Prepare job data
-            $jobData = [
-                'id' => $job->id,
-                'title' => $job->title,
-                'company' => $job->company ? $job->company->name : null,
-                'salary' => $job->salary,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-                'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->company->address,
-                'description' => $job->description,
-                'skill_experience' => $job->skill_experience,
-                'benefits' => $job->benefits,
-                'last_date' => $job->last_date,
-                'created_at' => $job->created_at->diffForHumans(),
-            ];
+            $jobData = $this->prepareJobData($job);
+            $jobRecommendations = $this->prepareJobRecommendations($job);
 
-            // Get job recommendations and format them
-            $jobRecommendations = $this->jobRecommend($job)->take(5)->map(function ($recommendedJob) {
-                return [
-                    'id' => $recommendedJob->id,
-                    'title' => $recommendedJob->title,
-                    'company' => $recommendedJob->company ? $recommendedJob->company->name : null,
-                    'salary' => $recommendedJob->salary,
-                    'job_type' => $recommendedJob->jobtype ? $recommendedJob->jobtype->pluck('name')->toArray() : null,
-                    'job_city' => $recommendedJob->jobcity ? $recommendedJob->jobcity->pluck('name')->toArray() : null,
-                    'skills' => $recommendedJob->skill->pluck('name')->toArray(),
-                    'address' => $recommendedJob->company->address,
-                    'last_date' => $recommendedJob->last_date,
-                    'created_at' => $recommendedJob->created_at->diffForHumans(),
-                ];
-            })->toArray();
-
-            // Return the successful response with job details and recommendations
-            return response()->json([
-                'success' => true,
-                'message' => 'Job details retrieved successfully',
-                'data' => [
+            $response = $this->successResponse(
+                'Job details retrieved successfully',
+                [
                     'job' => $jobData,
                     'jobRecommendations' => $jobRecommendations,
                 ],
-                'status_code' => 200
-            ]);
+                200
+            );
+
+            return response()->json($response);
 
         } catch (\Exception $e) {
-            // Return a response indicating there was an error
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while retrieving job details',
-                'error' => $e->getMessage(),
-                'status_code' => 500
-            ]);
+            return $this->errorResponse('An error occurred while retrieving job details', 500, $e->getMessage());
         }
+    }
+
+    private function prepareJobData(Job $job)
+    {
+        return [
+            'id' => $job->id,
+            'title' => $job->title,
+            'company' => $job->company ? $job->company->name : null,
+            'salary' => $job->salary,
+            'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+            'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+            'skills' => $job->skill->pluck('name')->toArray(),
+            'address' => $job->company->address,
+            'description' => $job->description,
+            'skill_experience' => $job->skill_experience,
+            'benefits' => $job->benefits,
+            'last_date' => $job->last_date,
+            'created_at' => $job->created_at->diffForHumans(),
+        ];
+    }
+
+    private function prepareJobRecommendations(Job $job)
+    {
+        return $this->jobRecommend($job)->take(5)->map(function ($recommendedJob) {
+            return [
+                'id' => $recommendedJob->id,
+                'title' => $recommendedJob->title,
+                'company' => $recommendedJob->company ? $recommendedJob->company->name : null,
+                'salary' => $recommendedJob->salary,
+                'job_type' => $recommendedJob->jobtype ? $recommendedJob->jobtype->pluck('name')->toArray() : null,
+                'job_city' => $recommendedJob->jobcity ? $recommendedJob->jobcity->pluck('name')->toArray() : null,
+                'skills' => $recommendedJob->skill->pluck('name')->toArray(),
+                'address' => $recommendedJob->company->address,
+                'last_date' => $recommendedJob->last_date,
+                'created_at' => $recommendedJob->created_at->diffForHumans(),
+            ];
+        })->toArray();
+    }
+
+    private function errorResponse($message, $statusCode, $error = null)
+    {
+        return [
+            'success' => false,
+            'message' => $message,
+            'error' => $error,
+            'status_code' => $statusCode
+        ];
+    }
+
+    private function successResponse($message, $data, $statusCode)
+    {
+        return [
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+            'status_code' => $statusCode
+        ];
     }
 
 }

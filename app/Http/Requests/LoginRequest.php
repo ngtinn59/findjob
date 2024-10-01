@@ -33,9 +33,9 @@ class LoginRequest extends FormRequest
     public function messages()
     {
         return [
-            'email.required' => 'Please enter your email',
-            'email.exists' => 'Email does not exist',
-            'password.required' => 'Please enter your password',
+            'email.required' => 'Vui lòng nhập email',
+            'email.exists' => 'Email chưa được đăng ký',
+            'password.required' => 'Vui lòng nhập khẩu',
             'password.exists' => 'Incorrect password',
         ];
     }

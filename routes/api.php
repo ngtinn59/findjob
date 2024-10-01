@@ -1,30 +1,35 @@
 <?php
 
-use App\Http\Controllers\Api\Admin\CitiesController;
-use App\Http\Controllers\Api\Admin\CompanysizesController;
-use App\Http\Controllers\Api\Admin\CompanytypesController;
-use App\Http\Controllers\Api\Admin\CountriesController;
-use App\Http\Controllers\Api\Admin\Job_typesController;
-use App\Http\Controllers\Api\Admin\JobtypesControllerController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\{
+    CitiesController,
+    CompanysizesController,
+    CompanytypesController,
+    CountriesController,
+    JobtypesControllerController,
+    CompaniesController as AdminCompaniesController,
+    JobsController as AdminJobsController
+};
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\Companies\CompaniesController;
-use App\Http\Controllers\Api\Companies\CompanyLocationsController;
-use App\Http\Controllers\Api\Companies\JobsController;
+use App\Http\Controllers\Api\Companies\{
+    CompaniesController, CompanyLocationsController, JobsController
+};
 use App\Http\Controllers\Api\Employer\EmployerRegisterController;
 use App\Http\Controllers\Api\Job\JobApplicationController;
-use App\Http\Controllers\Api\Resume\AboutmeController;
-use App\Http\Controllers\Api\Resume\AwardsController;
-use App\Http\Controllers\Api\Resume\CertificatesController;
-use App\Http\Controllers\Api\Resume\CvsController;
-use App\Http\Controllers\Api\Resume\EducationController;
-use App\Http\Controllers\Api\Resume\ExperiencesController;
-use App\Http\Controllers\Api\Resume\GetResumeController;
-use App\Http\Controllers\Api\Resume\ProfilesController;
-use App\Http\Controllers\Api\Resume\ProjectsController;
-use App\Http\Controllers\Api\Resume\SkillsController;
-use App\Http\Controllers\Api\User\UserJobController;
+use App\Http\Controllers\Api\Resume\{
+    AboutmeController,
+    AwardsController,
+    CertificatesController,
+    CvsController,
+    EducationController,
+    ExperiencesController,
+    GetResumeController,
+    ProfilesController,
+    ProjectsController,
+    SkillsController
+};
 use App\Http\Middleware\CheckUserRole;
-use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\CheckAdminRole;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,86 +41,88 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/jobtypes', [JobtypesControllerController::class, 'index']);
-Route::get('/companyType', [CompanytypesController::class, 'index']);
-Route::get('/companySize', [CompanysizesController::class, 'index']);
+Route::get('/company_types', [CompanytypesController::class, 'index']);
+Route::get('/company_sizes', [CompanysizesController::class, 'index']);
 
+// User Jobs
+Route::prefix('jobs')->group(function () {
+    Route::get('/list', [JobsController::class, 'indexShow']);
+    Route::get('/{job}', [JobsController::class, 'showJob']);
+    Route::get('/search', [JobsController::class, 'search']);
+});
 
-//User Jobs
-Route::get('/list-jobs', [JobsController::class, 'indexShow']);
-Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
-Route::get('/search', [JobsController::class, 'search']);
-Route::get('/companies1', [CompaniesController::class, 'indexShow']);
-Route::get('/companies1/{company}', [CompaniesController::class, 'show']);
+// Companies
+Route::prefix('companies')->group(function () {
+    Route::get('/', [CompaniesController::class, 'indexShow']);
+    Route::get('/{company}', [CompaniesController::class, 'show']);
+});
 
-//Auth
+// Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
+Route::delete('logout', [AuthController::class, 'logout']);
 
+// Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/download-cv', [ProfilesController::class, 'download_cv']);
-    Route::resource('profile', ProfilesController::class);
-    Route::resource('profiles/educations', EducationController::class);
-    Route::resource('profiles/skills', SkillsController::class);
-    Route::resource('profiles/aboutMe', AboutmeController::class);
-    Route::resource('profiles/certificates', CertificatesController::class);
-    Route::resource('profiles/awards', AwardsController::class);
-    Route::resource('profiles/projects', ProjectsController::class);
-    Route::resource('profiles/getResume', GetResumeController::class);
-    Route::resource('profiles/experiences', ExperiencesController::class);
     Route::post('/upload-cv', [CvsController::class, 'upload']);
+    Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
+    Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
+
+    // Profile Routes
+    Route::prefix('profiles')->group(function () {
+        Route::resource('/profiles/educations', EducationController::class);
+        Route::resource('/profiles/skills', SkillsController::class);
+        Route::resource('/profiles/about_me', AboutmeController::class);
+        Route::resource('/profiles/certificates', CertificatesController::class);
+        Route::resource('/profiles/awards', AwardsController::class);
+        Route::resource('/profiles/projects', ProjectsController::class);
+        Route::resource('/profiles/get_resume', GetResumeController::class);
+        Route::resource('/profiles/experiences', ExperiencesController::class);
+    });
+
+    // CV Routes
     Route::resource('cvs', CvsController::class);
 
+    // Company Routes
+    Route::prefix('companies')->group(function () {
+        Route::resource('/', CompaniesController::class);
+        Route::resource('/locations', CompanyLocationsController::class);
+        Route::resource('/skills', \App\Http\Controllers\Api\Companies\CompaniesSkillsController::class);
+    });
 
-    // Route cho việc đặt CV mặc định
-    Route::get('/default-cv',  [CvsController::class, 'getDefaultCv']);
-    Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
-    //Company
-    Route::resource('companies', CompaniesController::class);
-    Route::resource('companies/location', CompanyLocationsController::class);
-    Route::resource('company/skills', \App\Http\Controllers\Api\Companies\CompaniesSkillsController::class);
-
-    //Apply
-
-    Route::post('/jobs/{id}/apply', [JobsController::class, 'apply']);
-    Route::get('/viewAppliedJobs', [JobsController::class, 'applicant']);
+    // Job Application and Favorites
+    Route::prefix('jobs')->group(function () {
+        Route::post('/{id}/apply', [JobsController::class, 'apply']);
+        Route::get('/applied', [JobsController::class, 'applicant']);
+        Route::post('/favorites/{id}/save', [JobsController::class, 'saveJob']);
+        Route::post('/favorites/{id}/unsave', [JobsController::class, 'unsaveJob']);
+        Route::get('/favorites/saved', [JobsController::class, 'savedJobs']);
+        Route::get('/suggest', [JobsController::class, 'suggestJobs']);
+    });
 
     Route::middleware(CheckUserRole::class)->group(function () {
-        Route::resource('job', JobsController::class);
-        Route::post('/processApplication/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
+        Route::resource('jobs', JobsController::class);
+        Route::post('/process_application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
-        Route::get('/getStatistics', [JobApplicationController::class, 'getStatistics']);
+        Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);
     });
 
-    //favorites Job User
-    Route::post('/favorites/{id}/save', [JobsController::class, 'saveJob']);
-    Route::post('/favorites/{id}/unsave', [JobsController::class, 'unsaveJob']);
-    Route::get('/favorites/saved-jobs', [JobsController::class, 'savedJobs']);
-    Route::get('/appliedJobs', [JobsController::class, 'appliedJobs']);
-
-
-    //Goi y cong viec
-    Route::get('/suggest-jobs', [JobsController::class, 'suggestJobs']);
-
-
-
-    Route::middleware(\App\Http\Middleware\CheckAdminRole::class)->group(function () {
-        Route::resource('Admin/jobtypes', JobtypesControllerController::class);
-        Route::resource('Admin/country', CountriesController::class);
-        Route::resource('Admin/cties', CitiesController::class);
-
-        Route::resource('Admin/companyType', CompanytypesController::class);
-        Route::resource('Admin/companySize', CompanysizesController::class);
-        Route::resource('Admin/companies', \App\Http\Controllers\Api\Admin\CompaniesController::class);
-        Route::get('/Admin/companies1/count', [\App\Http\Controllers\Api\Admin\CompaniesController::class, 'countCompaniesAndJobs']);
-
-        Route::resource('Admin/jobs', \App\Http\Controllers\Api\Admin\JobsController::class);
-
-
+    Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
+        Route::resource('/jobtypes', JobtypesControllerController::class);
+        Route::resource('/countries', CountriesController::class);
+        Route::resource('/cities', CitiesController::class);
+        Route::resource('/company_types', CompanytypesController::class);
+        Route::resource('/company_sizes', CompanysizesController::class);
+        Route::resource('/companies', AdminCompaniesController::class);
+        Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
+        Route::resource('/jobs', AdminJobsController::class);
     });
-    Route::Delete('logout', [AuthController::class, 'logout']);
 });

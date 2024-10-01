@@ -17,8 +17,8 @@ class CitiesController extends Controller
     {
         $city = City::all();
         return response()->json([
-            'success'   => true,
-            'message'   => "success",
+            'success' => true,
+            'message' => "success",
             "data" => $city,
             'status_code' => 200
         ]);
@@ -55,8 +55,8 @@ class CitiesController extends Controller
         $city = City::create($data);
 
         return response()->json([
-            'success'   => true,
-            'message'   => "success",
+            'success' => true,
+            'message' => "success",
             "data" => $city,
             'status_code' => 200
         ]);

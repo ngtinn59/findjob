@@ -20,6 +20,16 @@ class EmployerRegisterController extends Controller
             'password' => 'required|string|min:8|max:255',
             'country_id' => 'required',
             'city_id' => 'required',
+        ], [
+            'name.required' => 'Vui lòng nhập tên công ty.',
+            'name.max' => 'Tên công ty không được vượt quá 225 ký tự.',
+            'email.required' => 'Vui lòng nhập địa chỉ Email của công ty.',
+            'email.email' => 'Địa chỉ Email phải đúng định dạng.',
+            'email.unique' => 'Địa chỉ Email của bạn đăng ký đã được đăng ký.',
+            'password.required' => 'Vui lòng điền mật khẩu.',
+            'password.min' => 'Vui lòng nhập mật khẩu lớn hơn 8 ký tự.',
+            'country_id.required' => 'Vui lòng lựa chọn quốc gia.',
+            'city_id.required' => 'Vui lòng lựa chọn thành phố.',
         ]);
 
         if ($validator->fails()) {

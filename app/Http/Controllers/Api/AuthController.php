@@ -46,12 +46,12 @@ class AuthController extends Controller
                 'token_type' => 'Bearer',
                 'user' => $user, // Optionally, include user information
                 'status_code' => 200,
-                'message' => 'Registration successful.'
+                'message' => 'Đăng ký thành công.'
             ]);
         } catch (\Exception $e) {
             // Rollback the transaction on error
             DB::rollback();
-            return response()->json(['message' => 'Registration failed.'], 500);
+            return response()->json(['message' => 'Đăng ký thất bại.'], 500);
         }
     }
     public function login(LoginRequest $request)
@@ -64,7 +64,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'error' => [
-                    'email' => ['Email does not exist']
+                    'email' => ['Email chưa được đăng ký']
                 ],
                 'status_code' => 422
             ], 422);
@@ -74,7 +74,7 @@ class AuthController extends Controller
         if (!Auth::attempt($credentials)) {
             return response()->json([
                 'error' => [
-                    'password' => ['Wrong password']
+                    'Mật Khẩu' => ['Sai mật khẩu']
                 ],
                 'status_code' => 401
             ], 401);

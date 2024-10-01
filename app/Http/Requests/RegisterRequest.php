@@ -27,7 +27,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'     => 'required|string|max:255',
+            'name' => 'required|string|max:255|regex:/^[\pL\s]+$/u',
             'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
         ];
@@ -36,11 +36,13 @@ class RegisterRequest extends FormRequest
     public function messages()
     {
         return [
-            'email.required' => 'Email is required!',
-            'email.email' => 'Invalid email format!',
-            'email.exists' => 'Email does not exist!',
-            'password.required' => 'Password is required!',
-            'password.min' => 'Password is too short',
+            'email.required' => 'Email là bắt buộc',
+            'email.email' => 'Sai định dạng email!',
+            'name.required' => 'Tên là bắt buộc',
+            'name.regex' => 'Tên không được có số hoặc ký tự đặc biệt',
+            'email.unique' => 'Email của bạn đăng ký đã tồn tại.',
+            'password.required' => 'Mật khẩu là bắt buộc!',
+            'password.min' => 'Mật khẩu tối thiểu 8 ký tự',
         ];
     }
 
@@ -54,8 +56,4 @@ class RegisterRequest extends FormRequest
                 'status_code' => 422,
             ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY));
     }
-
-
-
-
 }

@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: php:7.2-fpm-buster
+    image: php:8.2-fpm-buster
     container_name: app
     restart: unless-stopped
     tty: true
