@@ -19,6 +19,10 @@ return new class extends Migration
             $table->foreignId('company_size_id')->nullable();
             $table->foreignId('company_type_id')->nullable();
             $table->text('name')->nullable();
+            $table->string('phone')->nullable();
+            $table->text('email')->nullable();
+            $table->text('tax_code')->nullable();
+            $table->date('Date_of_establishment')->nullable();
             $table->text('Working_days')->nullable();
             $table->text('Overtime_policy')->nullable();
             $table->text('webstie')->nullable();

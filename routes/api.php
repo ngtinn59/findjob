@@ -41,13 +41,48 @@ use App\Http\Middleware\CheckAdminRole;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+
+// Route to send email verification notification
+Route::post('/email/verification-notification', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+
+    return response()->json(['message' => 'Verification link sent!']);
+})->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
+
+// Route to handle email verification
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+
+    return response()->json(['message' => 'Email verified successfully!']);
+})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
+
+// Route to check if email is verified
+Route::get('/email/verify', function (Request $request) {
+    return response()->json([
+        'email_verified' => $request->user()->hasVerifiedEmail(),
+    ]);
+})->middleware(['auth:sanctum'])->name('verification.notice');
+
+
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/send-mail', function () {
+    Mail::raw('This is a test email.', function ($message) {
+        $message->to('recipient@example.com')
+            ->subject('Test Mail');
+    });
+
+    return 'Mail sent!';
+});
 
 // Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
-Route::get('/jobtypes', [JobtypesControllerController::class, 'index']);
-Route::get('/company_types', [CompanytypesController::class, 'index']);
-Route::get('/company_sizes', [CompanysizesController::class, 'index']);
+Route::get('/job-types', [JobtypesControllerController::class, 'index']);
+Route::get('/company-types', [CompanytypesController::class, 'index']);
+Route::get('/company-sizes', [CompanysizesController::class, 'index']);
 
 // User Jobs
 Route::prefix('jobs')->group(function () {
@@ -116,11 +151,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
-        Route::resource('/jobtypes', JobtypesControllerController::class);
+        Route::resource('/job-types', JobtypesControllerController::class);
         Route::resource('/countries', CountriesController::class);
         Route::resource('/cities', CitiesController::class);
-        Route::resource('/company_types', CompanytypesController::class);
-        Route::resource('/company_sizes', CompanysizesController::class);
+        Route::resource('/company-types', CompanytypesController::class);
+        Route::resource('/company-sizes', CompanysizesController::class);
         Route::resource('/companies', AdminCompaniesController::class);
         Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
         Route::resource('/jobs', AdminJobsController::class);

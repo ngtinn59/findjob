@@ -13,13 +13,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Validator;
 
 class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
-        // Start a database transaction
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -36,24 +36,24 @@ class AuthController extends Controller
                 'email' => $request->email,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Send email verification notification
+            $user->sendEmailVerificationNotification();
 
-            // Commit the transaction
             DB::commit();
 
             return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => $user, // Optionally, include user information
+                'message' => 'Đăng ký thành công. Vui lòng xác minh email của bạn.',
                 'status_code' => 200,
-                'message' => 'Đăng ký thành công.'
             ]);
         } catch (\Exception $e) {
-            // Rollback the transaction on error
-            DB::rollback();
+            DB::rollback(); // Log the error
+            Log::error('Đăng ký thất bại: ' . $e->getMessage());
+
+
             return response()->json(['message' => 'Đăng ký thất bại.'], 500);
         }
     }
+
     public function login(LoginRequest $request)
     {
         $credentials = $request->only('email', 'password');
@@ -90,10 +90,12 @@ class AuthController extends Controller
             'success' => true,
             'name' => $user->name,
             'access_token' => $token,
+            'email_verified' => $user->hasVerifiedEmail(),
             'status_code' => 200,
             'token_type' => 'Bearer',
         ]);
     }
+
     public function logout(Request $request) {
             $request->user()->tokens()->delete();
         return response()->json(['message' => 'Logout Sucess'], 200);

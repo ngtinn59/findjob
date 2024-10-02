@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CountriesController extends Controller
