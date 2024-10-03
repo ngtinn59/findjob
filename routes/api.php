@@ -109,7 +109,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-cv', [CvsController::class, 'upload']);
     Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
-
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/verify-code', [AuthController::class, 'verifyCodeAndUpdatePassword']);
     // Profile Routes
     Route::prefix('profiles')->group(function () {
         Route::resource('/profiles/educations', EducationController::class);
