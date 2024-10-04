@@ -66,23 +66,15 @@ Route::get('/email/verify', function (Request $request) {
 })->middleware(['auth:sanctum'])->name('verification.notice');
 
 
-use Illuminate\Support\Facades\Mail;
-
-Route::get('/send-mail', function () {
-    Mail::raw('This is a test email.', function ($message) {
-        $message->to('recipient@example.com')
-            ->subject('Test Mail');
-    });
-
-    return 'Mail sent!';
-});
-
 // Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/job-types', [JobtypesControllerController::class, 'index']);
 Route::get('/company-types', [CompanytypesController::class, 'index']);
 Route::get('/company-sizes', [CompanysizesController::class, 'index']);
+
+Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
 // User Jobs
 Route::prefix('jobs')->group(function () {
@@ -109,8 +101,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-cv', [CvsController::class, 'upload']);
     Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
+
     Route::post('/change-password', [AuthController::class, 'changePassword']);
-    Route::post('/verify-code', [AuthController::class, 'verifyCodeAndUpdatePassword']);
+
+
+
     // Profile Routes
     Route::prefix('profiles')->group(function () {
         Route::resource('/profiles/educations', EducationController::class);
