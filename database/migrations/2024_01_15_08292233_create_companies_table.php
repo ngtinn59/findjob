@@ -28,6 +28,7 @@ return new class extends Migration
             $table->text('webstie')->nullable();
             $table->text('facebook')->nullable();
             $table->text('logo')->nullable();
+            $table->text('banner')->nullable();
             $table->text('address')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();

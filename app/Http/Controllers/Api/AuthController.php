@@ -8,7 +8,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\Profile;
 use App\Models\User;
-use App\Utilities\Constant;
+use App\Utillities\Constant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Validator;
 
 class AuthController extends Controller
 {
@@ -28,14 +27,14 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'account_type' => Constant::USER_LEVEL_DEVELOPER, // Có thể tùy chỉnh theo yêu cầu
-                'status' => Constant::USER_STATUS_ACTIVE, // Có thể điều chỉnh trạng thái mặc định
+                'account_type' => Constant::user_level_developer, // Có thể tùy chỉnh theo yêu cầu
+                'status' => Constant::user_status_active, // Có thể điều chỉnh trạng thái mặc định
                 'password' => Hash::make($request->password),
             ]);
 
             // Tạo profile cho user
             Profile::create([
-                'user_id' => $user->id,
+                'users_id' => $user->id,
                 'name' => $request->name,
                 'email' => $request->email,
             ]);
@@ -46,6 +45,7 @@ class AuthController extends Controller
             DB::commit();
 
             return response()->json([
+                'success' => true,
                 'message' => 'Đăng ký thành công. Vui lòng xác minh email của bạn.',
                 'status_code' => 200,
             ]);
@@ -54,7 +54,11 @@ class AuthController extends Controller
             // Log lỗi nếu có vấn đề
             Log::error('Đăng ký thất bại: ' . $e->getMessage());
 
-            return response()->json(['message' => 'Đăng ký thất bại.'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Đăng ký thất bại.',
+                'status_code' => 500,
+            ], 500);
         }
     }
 
@@ -72,6 +76,16 @@ class AuthController extends Controller
                 ],
                 'status_code' => 422
             ], 422);
+        }
+
+        // Kiểm tra xem người dùng đã xác minh email hay chưa
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'error' => [
+                    'email' => ['Email chưa được xác minh. Vui lòng kiểm tra email của bạn.']
+                ],
+                'status_code' => 403
+            ], 403);
         }
 
         // Xác thực người dùng
@@ -108,10 +122,15 @@ class AuthController extends Controller
 
     public function changePassword(Request $request)
     {
-        // Xác thực dữ liệu
+        // Xác thực dữ liệu với thông báo tùy chỉnh
         $validator = Validator::make($request->all(), [
             'current_password' => 'required',
             'new_password' => 'required|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
+            'new_password.required' => 'Vui lòng nhập mật khẩu mới.',
+            'new_password.min' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
+            'new_password.confirmed' => 'Xác nhận mật khẩu không trùng khớp.',
         ]);
 
         if ($validator->fails()) {
@@ -144,11 +163,24 @@ class AuthController extends Controller
     }
 
 
+
     public function forgotPassword(Request $request)
     {
-//        $request->validate([
-//            'email' => 'required|email',
-//        ]);
+
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không hợp lệ.',
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
 
         $user = User::where('email', $request->email)->first();
 
@@ -191,11 +223,25 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request)
     {
-//        $request->validate([
-//            'email' => 'required|email',
-//            'token' => 'required',
-//            'password' => 'required|min:8|confirmed',
-//        ]);
+
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'token' => 'required',
+            'password' => 'required|min:8|confirmed'], [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không hợp lệ.',
+            'token.required' => 'Vui lòng nhập token.',
+            'password.required' => 'Vui lòng nhập mật khẩu mới.',
+            'password.min' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
+
 
         $passwordReset = DB::table('password_reset_tokens')->where('email', $request->email)->first();
 

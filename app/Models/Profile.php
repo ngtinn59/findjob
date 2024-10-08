@@ -47,5 +47,10 @@ class Profile extends Model
     {
         return $this->hasMany(aboutme::class,'profiles_id','id');
     }
+    public function objectives()  : \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Objective::class,'profiles_id','id');
+    }
+
 
 }

@@ -56,13 +56,24 @@ class ExperiencesController extends Controller
             'responsibilities' => $request->input('responsibilities'),
             'profiles_id' => $profile_id
         ];
+
         $validator = Validator::make($data, [
             'position' => 'required',
             'company' => 'required',
-            'start_date' => 'required',
-            'end_date' => 'required',
+            'start_date' => 'required|date', // Kiểm tra định dạng ngày
+            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
             'responsibilities' => 'required',
             'profiles_id' => 'required',
+        ], [
+            'position.required' => 'Vị trí là bắt buộc.',
+            'company.required' => 'Công ty là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'responsibilities.required' => 'Trách nhiệm là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 
         if ($validator->fails()) {
@@ -116,14 +127,73 @@ class ExperiencesController extends Controller
      */
     public function update(Request $request, Experience $experience)
     {
-        $data = $request->all();
+        $user = auth()->user();
+        $profile = $user->profile;
 
+        // Kiểm tra xem người dùng đã tạo hồ sơ chưa
+        if (!$profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn chưa tạo hồ sơ.',
+            ], 400);
+        }
 
-        $experience->update($data);
+        // Kiểm tra quyền truy cập
+        if ($experience->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực không thể tạo kinh nghiệm làm việc',
+            ], 403);
+        }
 
+        $data = [
+            'position' => $request->input('position'),
+            'company' => $request->input('company'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+            'responsibilities' => $request->input('responsibilities'),
+            'profiles_id' => $profile->id
+        ];
+
+        // Xác thực dữ liệu đầu vào
+        $validator = Validator::make($data, [
+            'position' => 'required',
+            'company' => 'required',
+            'start_date' => 'required|date', // Kiểm tra định dạng ngày
+            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
+            'responsibilities' => 'required',
+            'profiles_id' => 'required',
+        ], [
+            'position.required' => 'Vị trí là bắt buộc.',
+            'company.required' => 'Công ty là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'responsibilities.required' => 'Trách nhiệm là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
+        ]);
+
+        // Nếu dữ liệu không hợp lệ, trả về thông báo lỗi
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        // Lấy dữ liệu đã validate
+        $validatedData = $validator->validated();
+
+        // Cập nhật thông tin kinh nghiệm
+        $experience->update($validatedData);
+
+        // Trả về thông báo thành công và dữ liệu đã cập nhật
         return response()->json([
             'success' => true,
-            'message' => 'Experience updated successfully',
+            'message' => 'Cập nhật kinh nghiệm thành công',
             'data' => $experience,
             'status_code' => 200
         ]);
@@ -134,13 +204,33 @@ class ExperiencesController extends Controller
      */
     public function destroy(Experience $experience)
     {
+        $user = auth()->user();
+        $profile = $user->profile;
 
+        // Kiểm tra xem experience có thuộc về profile của người dùng không
+        if ($experience->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực không thể xóa kinh nghiệm',
+            ], 403);
+        }
+
+        // Kiểm tra nếu không tìm thấy kinh nghiệm
+        if (!$experience) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kinh nghiệm không tìm thấy'
+            ], 404);
+        }
+
+        // Xóa kinh nghiệm
         $experience->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'Experience deleted successfully',
-            'data' => $experience,
+            'message' => 'Kinh nghiệm được xóa thành công',
             'status_code' => 200
         ]);
     }
+
 }

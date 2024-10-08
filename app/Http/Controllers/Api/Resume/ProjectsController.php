@@ -57,13 +57,22 @@ class ProjectsController extends Controller
             'description' => $request->input('description'),
             'profiles_id' => $profile_id
         ];
-
+        // Xác thực dữ liệu
         $validator = Validator::make($data, [
             'title' => 'required',
-            'start_date' => 'required',
-            'end_date' => 'required',
+            'start_date' => 'required|date', // Thêm kiểm tra định dạng ngày
+            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
             'description' => 'required',
             'profiles_id' => 'required',
+        ], [
+            'title.required' => 'Tiêu đề là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'description.required' => 'Mô tả là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 
         if ($validator->fails()) {
@@ -92,24 +101,27 @@ class ProjectsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Project $project)
+    public function show(Project $project)
     {
-//        $user = User::where("id", auth()->user()->id)->first();
-//        $profile = $user->profile->first();
-//
-//        if ($project->profiles_id == $profile->id) {
-//            return response()->json([
-//                'success' => true,
-//                'message' => 'success',
-//                'data' => $project,
-//                'status_code' => 200
-//            ]);
-//        } else {
-//            return response()->json([
-//                'success' => false,
-//                'message' => 'fail'
-//            ]);
-//        }
+        $user = auth()->user(); // Lấy người dùng hiện tại
+        $profile = $user->profile; // Lấy hồ sơ của người dùng hiện tại
+
+        // Kiểm tra xem dự án có thuộc về hồ sơ của người dùng không
+        if ($project->profiles_id === $profile->id) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Dự án được tìm thấy.',
+                'data' => $project,
+                'status_code' => 200,
+            ]);
+        }
+
+        // Nếu không thuộc về hồ sơ, trả về lỗi
+        return response()->json([
+            'success' => false,
+            'message' => 'Bạn không có quyền truy cập vào dự án này.',
+            'status_code' => 403, // Trả về mã lỗi 403 cho Unauthorized
+        ]);
     }
 
 
@@ -118,17 +130,64 @@ class ProjectsController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        $data = $request->all();
+        $user = auth()->user();
+        $profile = $user->profile;
 
+        // Kiểm tra xem dự án có thuộc về hồ sơ của người dùng không
+        if ($project->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền cập nhật dự án này.',
+                'status_code' => 403,
+            ]);
+        }
+
+        // Xác thực dữ liệu
+        $data = [
+            'title' => $request->input('title'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+            'description' => $request->input('description'),
+            'profiles_id' => $profile->id,
+        ];
+
+        $validator = Validator::make($data, [
+            'title' => 'required',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'description' => 'required',
+            'profiles_id' => 'required',
+        ], [
+            'title.required' => 'Tiêu đề là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'description.required' => 'Mô tả là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        // Cập nhật dự án
+        $data = $validator->validated();
         $project->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Project updated successfully',
+            'message' => 'Dự án đã được cập nhật thành công.',
             'data' => $project,
-            'status_code' => 200
+            'status_code' => 200,
         ]);
     }
+
 
     /**
      * Remove the specified resource from storage.

@@ -53,12 +53,11 @@ class AwardsController extends Controller
 
         $data = [
             'title' => $request->input('title'),
-            'profiles_id' =>$profile_id,
+            'profiles_id' => $profile_id,
             'provider' => $request->input('provider'),
             'issueDate' => $request->input('issueDate'),
             'description' => $request->input('description')
         ];
-
 
         $validator = Validator::make($data, [
             'title' => 'required',
@@ -66,6 +65,12 @@ class AwardsController extends Controller
             'provider' => 'required',
             'issueDate' => 'required',
             'description' => 'required',
+        ], [
+            'title.required' => 'Tiêu đề là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
+            'provider.required' => 'Nhà cung cấp là bắt buộc.',
+            'issueDate.required' => 'Ngày phát hành là bắt buộc.',
+            'description.required' => 'Mô tả là bắt buộc.'
         ]);
 
         if ($validator->fails()) {
@@ -92,27 +97,27 @@ class AwardsController extends Controller
      */
     public function show(Award $award)
     {
-//        // Check if the award belongs to the authenticated user
-//        $user = User::where("id", auth()->user()->id)->first();
-//        $profile = $user->profile->first();
-//        if ($award->profiles_id !== $profile->id) {
-//            return response()->json([
-//                'success' => false,
-//                'message' => 'Unauthorized access to the award',
-//            ], 403);
-//        }
-//
-//        return response()->json([
-//            'success' => true,
-//            'message' => 'success',
-//            'data' => [
-//                'title' => $award->title,
-//                'provider' => $award->provider,
-//                'issueDate' => $award->issueDate,
-//                'description' => $award->description,
-//            ],
-//            'status_code' => 200
-//        ]);
+        // Check if the award belongs to the authenticated user
+        $user = User::where("id", auth()->user()->id)->first();
+        $profile = $user->profile->first();
+        if ($award->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to the award',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => [
+                'title' => $award->title,
+                'provider' => $award->provider,
+                'issueDate' => $award->issueDate,
+                'description' => $award->description,
+            ],
+            'status_code' => 200
+        ]);
     }
 
     /**
@@ -123,25 +128,57 @@ class AwardsController extends Controller
         $user = auth()->user();
         $profile = $user->profile;
 
+        // Kiểm tra quyền truy cập
         if ($award->profiles_id !== $profile->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to delete the award',
+                'message' => 'Unauthorized access to update the award',
             ], 403);
         }
 
-        $data = $request->all();
+        // Dữ liệu đầu vào
+        $data = [
+            'title' => $request->input('title'),
+            'profiles_id' => $profile->id,
+            'provider' => $request->input('provider'),
+            'issueDate' => $request->input('issueDate'),
+            'description' => $request->input('description')
+        ];
 
+        // Xác thực dữ liệu
+        $validator = Validator::make($data, [
+            'title' => 'required',
+            'profiles_id' => 'required',
+            'provider' => 'required',
+            'issueDate' => 'required',
+            'description' => 'required',
+        ], [
+            'title.required' => 'Tiêu đề là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
+            'provider.required' => 'Nhà cung cấp là bắt buộc.',
+            'issueDate.required' => 'Ngày phát hành là bắt buộc.',
+            'description.required' => 'Mô tả là bắt buộc.'
+        ]);
 
-        $award->update($data);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        // Cập nhật dữ liệu
+        $award->update($validator->validated());
 
         return response()->json([
             'success' => true,
-            'message' => 'Award me updated successfully',
+            'message' => 'Award updated successfully',
             'data' => $award,
             'status_code' => 200
         ]);
     }
+
 
     /**
      * Remove the specified resource from storage.

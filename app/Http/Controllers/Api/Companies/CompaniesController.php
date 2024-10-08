@@ -87,15 +87,21 @@ class CompaniesController extends Controller
 
         $data = $request->only([
             'company_size_id', 'company_type_id', 'name', 'Working_days',
-            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description', 'address'
+            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description', 'address','banner'
         ]);
 
         // Upload logo
         $file = $request->file('logo');
         $path = public_path('uploads/images');
         $file_name = Common::uploadFile($file, $path);
-
         $data['logo'] = $file_name;
+
+		// Upload banner
+        $bannerFile = $request->file('banner'); // Nhận file banner từ request
+        if ($bannerFile) { // Kiểm tra nếu file banner có tồn tại
+            $bannerFileName = Common::uploadFile($bannerFile, $path); // Upload banner
+            $data['banner'] = $bannerFileName; // Lưu tên file banner vào mảng dữ liệu
+        }
 
         $company = Company::where('users_id', auth()->user()->id)->first();
 
@@ -105,6 +111,7 @@ class CompaniesController extends Controller
             $data['users_id'] = auth()->user()->id;
             $company = Company::create($data);
         }
+
         $companyType = optional($company->companytype)->name;
         $companySize = optional($company->companysize)->name;
         $country = optional($company->country)->name;
@@ -121,6 +128,7 @@ class CompaniesController extends Controller
             'Overtime_policy' => $company->Overtime_policy,
             'webstie' => $company->webstie,
             'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
             'facebook' => $company->facebook,
             'address' => $company->address,
             'description' => $company->description,
@@ -161,7 +169,8 @@ class CompaniesController extends Controller
             'Working_days' => $company->Working_days,
             'Overtime_policy' => $company->Overtime_policy,
             'webstie' => $company->webstie,
-            'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+            'logo' => asset('uploads/images/' . $company->logo),
+            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
             'facebook' => $company->facebook,
             'description' => $company->description,
             'address' => $company->address
@@ -239,6 +248,62 @@ class CompaniesController extends Controller
             ], 400);
         }
     }
+
+    public function banner(Request $request)
+    {
+        $user_id = auth()->user()->id;
+
+        $validator = Validator::make($request->all(), [
+            'banner' => 'required|image|mimes:jpeg,jpg,png|max:1024',
+        ], [
+            'banner.required' => 'Banner là bắt buộc.',
+            'banner.image' => 'Banner phải là hình ảnh.',
+            'banner.mimes' => 'Banner phải là định dạng jpeg, jpg hoặc png.',
+            'banner.max' => 'Banner không được vượt quá 1MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        if ($request->hasFile('logo')) {
+            $file = $request->file('logo');
+            $ext = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $ext;
+
+            // Retrieve the old logo filename
+            $oldBanner = Company::where('users_id', $user_id)->value('banner');
+
+            // Delete the old logo file
+            if (is_file(public_path('uploads/banner/' . $oldBanner))) {
+                unlink(public_path('uploads/banner/' . $oldBanner));
+            }
+
+            // Move the new file to the uploads directory
+            $file->move(public_path('uploads/banner/'), $filename);
+
+            // Update the logo filename in the database
+            Company::where('users_id', $user_id)->update([
+                'banner' => $filename
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Trang bìa được cập nhật thành công.',
+                'logo_filename' => $filename
+            ], 200);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có file logo cung cấp.',
+            ], 400);
+        }
+    }
+
 
     public function indexShow(Request $request){
         $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) {

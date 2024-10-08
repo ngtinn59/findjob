@@ -11,26 +11,26 @@ use App\Http\Controllers\Api\Admin\{
     JobsController as AdminJobsController
 };
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\Companies\{
-    CompaniesController, CompanyLocationsController, JobsController
-};
+use App\Http\Controllers\Api\Companies\{CompaniesController,
+    CompaniesSkillsController,
+    CompanyLocationsController,
+    JobsController};
 use App\Http\Controllers\Api\Employer\EmployerRegisterController;
 use App\Http\Controllers\Api\Job\JobApplicationController;
-use App\Http\Controllers\Api\Resume\{
-    AboutmeController,
+use App\Http\Controllers\Api\Resume\{AboutmeController,
     AwardsController,
     CertificatesController,
     CvsController,
     EducationController,
     ExperiencesController,
     GetResumeController,
+    ObjectivesController,
     ProfilesController,
     ProjectsController,
-    SkillsController
-};
+    SkillsController};
 use App\Http\Middleware\CheckUserRole;
 use App\Http\Middleware\CheckAdminRole;
-
+use App\Http\Controllers\MessageController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -48,15 +48,16 @@ use Illuminate\Http\Request;
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
 
-    return response()->json(['message' => 'Verification link sent!']);
+    return response()->json(['message' => 'Đã gửi liên kết xác minh!']);
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
 // Route to handle email verification
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
 
-    return response()->json(['message' => 'Email verified successfully!']);
-})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
+    return response()->json(['message' => 'Email đã được xác minh thành công!']);
+})->middleware(['signed'])->name('verification.verify');
+
 
 // Route to check if email is verified
 Route::get('/email/verify', function (Request $request) {
@@ -77,23 +78,30 @@ Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
 // User Jobs
-Route::prefix('jobs')->group(function () {
-    Route::get('/list', [JobsController::class, 'indexShow']);
-    Route::get('/{job}', [JobsController::class, 'showJob']);
-    Route::get('/search', [JobsController::class, 'search']);
-});
 
-// Companies
-Route::prefix('companies')->group(function () {
-    Route::get('/', [CompaniesController::class, 'indexShow']);
-    Route::get('/{company}', [CompaniesController::class, 'show']);
-});
+Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
+Route::get('/search', [JobsController::class, 'search']);
+Route::get('/companies1', [CompaniesController::class, 'indexShow']);
+Route::get('/companies1/{company}', [CompaniesController::class, 'show']);
+
+// Companie
 
 // Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::delete('logout', [AuthController::class, 'logout']);
+
+// Chat Real time
+
+Route::get('resume/objectives/search', [ObjectivesController::class, 'search']);
+//User Jobs
+Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
+Route::get('/search', [JobsController::class, 'search']);
+Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
+Route::get('/list-companies/{company}', [CompaniesController::class, 'show']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -105,17 +113,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
 
+    Route::post('messages', [MessageController::class, 'sendMessage']);
+    Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
+
+    Route::resource('company/skills', CompaniesSkillsController::class);
 
     // Profile Routes
+    Route::resource('profile', ProfilesController::class);
+
     Route::prefix('profiles')->group(function () {
-        Route::resource('/profiles/educations', EducationController::class);
-        Route::resource('/profiles/skills', SkillsController::class);
-        Route::resource('/profiles/about_me', AboutmeController::class);
-        Route::resource('/profiles/certificates', CertificatesController::class);
-        Route::resource('/profiles/awards', AwardsController::class);
-        Route::resource('/profiles/projects', ProjectsController::class);
-        Route::resource('/profiles/get_resume', GetResumeController::class);
-        Route::resource('/profiles/experiences', ExperiencesController::class);
+        Route::resource('/educations', EducationController::class);
+        Route::resource('/skills', SkillsController::class);
+        Route::resource('/about-me', AboutmeController::class);
+        Route::resource('/certificates', CertificatesController::class);
+        Route::resource('/awards', AwardsController::class);
+        Route::resource('/projects', ProjectsController::class);
+        Route::resource('/resume', GetResumeController::class);
+        Route::resource('/experiences', ExperiencesController::class);
+        Route::resource('/objectives', ObjectivesController::class);
     });
 
     // CV Routes
@@ -125,7 +140,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('companies')->group(function () {
         Route::resource('/', CompaniesController::class);
         Route::resource('/locations', CompanyLocationsController::class);
-        Route::resource('/skills', \App\Http\Controllers\Api\Companies\CompaniesSkillsController::class);
+        Route::resource('/skills', CompaniesSkillsController::class);
     });
 
     // Job Application and Favorites
@@ -154,6 +169,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/company-sizes', CompanysizesController::class);
         Route::resource('/companies', AdminCompaniesController::class);
         Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
+
         Route::resource('/jobs', AdminJobsController::class);
+        Route::post('/admin/jobs/{jobId}/confirm', [JobController::class, 'confirmJob']);
+
     });
 });

@@ -18,6 +18,7 @@ class EducationController extends Controller
     public function index()
     {
         $user =  auth()->user();
+        dd($user);
         $profile = $user->profile;
         $profile_id = $profile->id;
         $educations = educations::where("profiles_id", $profile_id)->get();
@@ -36,7 +37,7 @@ class EducationController extends Controller
         // Trả về danh sách giáo dục dưới dạng JSON
         return response()->json([
             'success' => true,
-            'message' => 'success',
+            'message' => 'Truy vấn quá trình học tập thành công',
             'data' => $educationsData,
             'status_code' => 200
         ]);
@@ -64,10 +65,20 @@ class EducationController extends Controller
         $validator = Validator::make($data, [
             'degree' => 'required',
             'institution' => 'required',
-            'start_date' => 'required',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'required|date', // Thêm kiểm tra định dạng ngày
+            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
             'additionalDetail' => 'required',
             'profiles_id' => 'required',
+        ], [
+            'degree.required' => 'Trình độ là bắt buộc.',
+            'institution.required' => 'Cơ sở giáo dục là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'additionalDetail.required' => 'Chi tiết bổ sung là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 
         if ($validator->fails()) {
@@ -102,7 +113,7 @@ class EducationController extends Controller
         if ($education->profiles_id !== $profile->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to the award',
+                'message' => 'Lỗi xác thực không thể hiển thị quá trình học tập',
             ], 403);
         }
 
@@ -125,22 +136,53 @@ class EducationController extends Controller
     public function update(Request $request, educations $education)
     {
         $user = auth()->user();
+        $profile = $user->profile;
 
-        // Kiểm tra xem người dùng có quyền truy cập vào thông tin giáo dục không
-        if ($education->profile->user_id !== $user->id) {
+        // Kiểm tra xem người dùng đã tạo hồ sơ chưa
+        if (!$profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to update education',
+                'message' => 'Bạn chưa tạo hồ sơ.',
+                'status_code' => 400
+            ], 400); // Hoặc 403 tùy thuộc vào logic của bạn
+        }
+
+        if ($education->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực khôgn thể tạo quá trình học tập',
             ], 403);
         }
 
-        // Validate dữ liệu đầu vào
-        $validator = Validator::make($request->all(), [
+        // Lấy ID của hồ sơ từ auth
+        $profile_id = $profile->id;
+        $data = [
+            'degree' => $request->input('degree'),
+            'institution' => $request->input('institution'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+            'additionalDetail' => $request->input('additionalDetail'),
+            'profiles_id' => $profile_id // Sử dụng ID hồ sơ từ auth
+        ];
+
+        // Xác thực dữ liệu đầu vào
+        $validator = Validator::make($data, [
             'degree' => 'required',
             'institution' => 'required',
-            'start_date' => 'required',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'required|date', // Thêm kiểm tra định dạng ngày
+            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
             'additionalDetail' => 'required',
+            'profiles_id' => 'required',
+        ], [
+            'degree.required' => 'Trình độ là bắt buộc.',
+            'institution.required' => 'Cơ sở giáo dục là bắt buộc.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
+            'start_date.date' => 'Ngày bắt đầu phải là định dạng ngày hợp lệ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
+            'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+            'additionalDetail.required' => 'Chi tiết bổ sung là bắt buộc.',
+            'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 
         // Nếu dữ liệu không hợp lệ, trả về thông báo lỗi
@@ -153,15 +195,15 @@ class EducationController extends Controller
         }
 
         // Lấy dữ liệu đã validate
-        $data = $validator->validated();
+        $validatedData = $validator->validated();
 
         // Cập nhật thông tin giáo dục
-        $education->update($data);
+        $education->update($validatedData);
 
         // Trả về thông báo thành công và dữ liệu đã cập nhật
         return response()->json([
             'success' => true,
-            'message' => 'Education updated successfully',
+            'message' => 'Cập nhật thông tin giáo dục thành công',
             'data' => $education,
             'status_code' => 200
         ]);
@@ -179,14 +221,14 @@ class EducationController extends Controller
         if ($education->profiles_id !== $profile->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to delete the award',
+                'message' => 'Lỗi xác thực không thể xóa quá trình học tập',
             ], 403);
         }
 
         if (!$education) {
             return response()->json([
                 'success' => false,
-                'message' => 'Education not found'
+                'message' => 'Quá trình học tập không tìm thấy'
             ], 404);
         }
 
@@ -194,7 +236,7 @@ class EducationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Education deleted successfully',
+            'message' => 'Quá trình học tập được xóa thành công',
             'status_code' => 200
         ]);
     }

@@ -32,7 +32,7 @@ class JobsController extends Controller
                 return [
                     'id' => $job->id,
                     'title' => $job->title,
-//                    'company' => $job->company ? $job->company->name : null,
+                    'company' => $job->company ? $job->company->name : null,
                     'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
                     'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
                     'salary' => $job->salary,
@@ -79,26 +79,60 @@ class JobsController extends Controller
         $user = auth()->user();
         $company = $user->companies->id;
 
+        // Validation rules
         $validator = Validator::make($request->all(), [
-            'jobtype_id' => 'required',
-            'city_id' => 'required',
-            'title' => 'required',
-            'salary' => 'required|numeric',
+            'jobtype_id' => 'required|exists:job_types,id',
+            'city_id' => 'required|exists:cities,id',
+            'title' => 'required|string',
+            'profession' => 'required|string',
+            'position' => 'nullable|string',
+            'experience_years' => 'nullable|integer',
+            'work_address' => 'nullable|string',
+            'employment_type' => 'nullable|string',
+            'quantity' => 'nullable|integer',
+            'salary_from' => 'nullable|numeric',
+            'salary_to' => 'nullable|numeric',
+            'education_level' => 'nullable|string',
+            'last_date' => 'required|date',
+            'description' => 'required|string',
+            'skill_experience' => 'nullable|string',
+            'benefits' => 'nullable|string',
+            'city' => 'nullable|string',
+            'district' => 'nullable|string',
+            'work_location' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'contact_name' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
             'status' => 'required|integer',
             'featured' => 'required|integer',
-            'description' => 'required|string',
-            'last_date' => 'required|date',
-            'address' => 'required|string',
-            'skill_experience' => 'required|string',
-            'benefits' => 'required|string',
-            'job_skills' => 'required|array',  // Validate that job_skills is an array.
-            'job_skills.*.name' => 'required|string', // Validate that each skill has a name.
+            'job_skills' => 'required|array',
+            'job_skills.*.name' => 'required|string',
         ]);
+
+        // Custom error messages
+        $messages = [
+            'jobtype_id.required' => 'Trường loại công việc là bắt buộc.',
+            'jobtype_id.exists' => 'Loại công việc không tồn tại.',
+            'city_id.required' => 'Trường thành phố là bắt buộc.',
+            'city_id.exists' => 'Thành phố không tồn tại.',
+            'title.required' => 'Tiêu đề là bắt buộc.',
+            'profession.required' => 'Nghề nghiệp là bắt buộc.',
+            'last_date.required' => 'Ngày hết hạn là bắt buộc.',
+            'description.required' => 'Mô tả là bắt buộc.',
+            'job_skills.required' => 'Kỹ năng công việc là bắt buộc.',
+            'job_skills.array' => 'Kỹ năng công việc phải là một mảng.',
+            'job_skills.*.name.required' => 'Tên kỹ năng là bắt buộc.',
+            'email.email' => 'Địa chỉ email không hợp lệ.',
+        ];
+
+        $validator->setCustomMessages($messages);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => 'Lỗi xác thực',
                 'errors' => $validator->errors(),
                 'status_code' => 400
             ], 400);
@@ -108,13 +142,12 @@ class JobsController extends Controller
 
         // Add users_id and company_id to the validated data array.
         $validatedData['users_id'] = $user->id;
-        $validatedData['company_id'] = $company ;
+        $validatedData['company_id'] = $company;
 
-        // You may want to handle the case when a company is not found.
-        if (! $company) {
+        if (!$company) {
             return response()->json([
                 'success' => false,
-                'message' => 'No company found for the user.',
+                'message' => 'Không tìm thấy công ty cho người dùng.',
             ], 404);
         }
 
@@ -123,49 +156,57 @@ class JobsController extends Controller
         unset($validatedData['job_skills']);
 
         try {
-            // Start a transaction
             \DB::beginTransaction();
-
-            // Create the job
             $job = Job::create($validatedData);
 
-            // Attach the job skills to the job
             foreach ($jobSkillsData as $skillData) {
                 $job->jobSkills()->create($skillData);
             }
 
-            // Commit the transaction
             \DB::commit();
 
             $jobData = [
                 'id' => $job->id,
                 'title' => $job->title,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'salary' => $job->salary,
-                'status' => $job->status ? 'active' : 'inactive',
-                'featured' => $job->featured ?  'active' : 'inactive',
-                'address' => $job->address,
+                'profession' => $job->profession,
+                'position' => $job->position,
+                'experience_years' => $job->experience_years,
+                'work_address' => $job->work_address,
+                'employment_type' => $job->employment_type,
+                'quantity' => $job->quantity,
+                'salary_from' => $job->salary_from,
+                'salary_to' => $job->salary_to,
+                'education_level' => $job->education_level,
+                'status' => $job->status ? 'inactive' : 'active',
+                'featured' => $job->featured ? 'active' : 'inactive',
+                'last_date' => $job->last_date,
                 'description' => $job->description,
                 'skill_experience' => $job->skill_experience,
-                'last_date' => $job->last_date,
                 'benefits' => $job->benefits,
+                'city' => $job->city,
+                'district' => $job->district,
+                'work_location' => $job->work_location,
+                'latitude' => $job->latitude,
+                'longitude' => $job->longitude,
+                'contact_name' => $job->contact_name,
+                'phone' => $job->phone,
+                'email' => $job->email,
                 'job_skills' => $job->jobSkills->pluck('name')->toArray(),
             ];
+
             return response()->json([
                 'success' => true,
-                'message' => 'Job and job skills created successfully.',
+                'message' => 'Công việc và kỹ năng công việc đã được tạo thành công.',
                 'data' => $jobData,
                 'status_code' => 200
             ]);
         } catch (\Exception $e) {
-            // Rollback the transaction
             \DB::rollBack();
-
             \Log::error($e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Job creation failed.',
+                'message' => 'Tạo công việc không thành công.',
             ], 500);
         }
     }
@@ -585,8 +626,9 @@ class JobsController extends Controller
     public function indexShow()
     {
         $jobs = Job::where('status', 1)
+            ->orderBy('featured', 'desc') // Sắp xếp các công việc có featured = 1 trước
             ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo mới nhất
-            ->with('jobtype', 'skill', 'company','jobcity')
+            ->with('jobtype', 'skill', 'company', 'jobcity')
             ->paginate(5);
 
         $jobsData = $jobs->map(function ($job) {
@@ -594,11 +636,14 @@ class JobsController extends Controller
                 'id' => $job->id,
                 'title' => $job->title,
                 'company' => $job->company ? $job->company->name : null,
+                'logo' => $job->company ? $job->company->logo : null, // Lấy logo của công ty
                 'salary' => $job->salary,
                 'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
                 'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
                 'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->company->address,
+                'address' => $job->company ? $job->company->address : null,
+                'featured' => $job->featured,
+                'applicant_count' => $job->applicants()->count(), // Số lượng người ứng tuyển
                 'last_date' => $job->last_date,
                 'created_at' => $job->created_at->diffForHumans(),
             ];
@@ -617,6 +662,7 @@ class JobsController extends Controller
             'status_code' => 200
         ]);
     }
+
 
 
     public function suggestJobs(Request $request)

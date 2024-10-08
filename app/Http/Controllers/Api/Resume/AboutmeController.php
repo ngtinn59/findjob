@@ -52,14 +52,19 @@ class AboutmeController extends Controller
         $validator = Validator::make($data, [
             'description' => 'required',
             'profiles_id' => 'required|exists:profiles,id',
+        ],[
+            'description.required' => 'Vui lòng nhập thông tin.',
+            'profiles_id.required' => 'profiles_id is required.',
+            'profiles_id.exists' => 'profiles_id is invalid.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => 'Lỗi xác thực',
                 'errors' => $validator->errors(),
-            ], 400);
+                'status_code' => 422,
+            ], 422);
         }
 
         $data = $validator->validated();
@@ -74,7 +79,7 @@ class AboutmeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Operation successful",
+            'message' => "Phương thức thực hiện thành công",
             "data" => $aboutme,
             'status_code' => $status_code
         ]);
@@ -84,23 +89,23 @@ class AboutmeController extends Controller
      */
     public function show(aboutme $aboutme)
     {
-//        $user = User::where("id", auth()->user()->id)->first();
-//        $profile = $user->profile->first();
-//        if ($aboutme->profiles_id !== $profile->id) {
-//            return response()->json([
-//                'success' => false,
-//                'message' => 'Unauthorized access to the award',
-//            ], 403);
-//        }
-//
-//        return response()->json([
-//            'success' => true,
-//            'message' => 'success',
-//            'data' => [
-//                'description' => $aboutme->description,
-//            ],
-//            'status_code' => 200
-//        ]);
+        $user = User::where("id", auth()->user()->id)->first();
+        $profile = $user->profile->first();
+        if ($aboutme->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to the award',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => [
+                'description' => $aboutme->description,
+            ],
+            'status_code' => 200
+        ]);
     }
 
     /**

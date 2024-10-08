@@ -101,6 +101,39 @@ class JobsController extends Controller
         $job->delete();
 
     }
+
+
+    public function confirmJob($jobId)
+    {
+        $job = Job::find($jobId);
+
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Công việc không tồn tại.',
+            ], 404);
+        }
+
+        // Chỉ cho phép admin xác nhận
+        if (!auth()->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền xác nhận công việc.',
+            ], 403);
+        }
+
+        $job->status = 1; // Bật công việc
+        $job->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Công việc đã được xác nhận và kích hoạt.',
+            'data' => $job,
+            'status_code' => 200
+        ]);
+    }
+
+
     public function countJobs()
     {
         // Sử dụng Eloquent query builder

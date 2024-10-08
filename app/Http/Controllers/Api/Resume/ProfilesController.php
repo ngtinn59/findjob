@@ -50,11 +50,9 @@ class ProfilesController extends Controller
      */
     public function store(Request $request)
     {
-        // Tìm profile của người dùng hiện tại
         $user =  auth()->user();
-
         $profile = $user->profile;
-        // Nếu không có profile tồn tại, tạo mới
+
         if (!$profile) {
             // Thực hiện validation
             $validator = Validator::make($request->all(), [
@@ -65,19 +63,25 @@ class ProfilesController extends Controller
                 'birthday' => 'required',
                 'location' => 'required',
                 'website' => 'required',
-//                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ], [
+                'name.required' => 'Tên là bắt buộc.',
+                'title.required' => 'Chức danh là bắt buộc.',
+                'phone.required' => 'Số điện thoại là bắt buộc.',
+                'email.required' => 'Email là bắt buộc.',
+                'birthday.required' => 'Ngày sinh là bắt buộc.',
+                'location.required' => 'Địa điểm là bắt buộc.',
+                'website.required' => 'Website là bắt buộc.',
             ]);
 
-            // Nếu validation không thành công, trả về lỗi
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation error',
+                    'message' => 'Lỗi xác thực',
                     'errors' => $validator->errors(),
                 ], 400);
             }
 
-            // Upload file ảnh và lấy tên file
+            // Upload file ảnh và xử lý
             $file = $request->file('image');
             $path = public_path('uploads/images');
             $file_name = Common::uploadFile($file, $path);
@@ -96,32 +100,29 @@ class ProfilesController extends Controller
                 'users_id' => auth()->user()->id,
             ];
         } else {
-            // Nếu có profile tồn tại, cập nhật
-            // Kiểm tra xem request có chứa file ảnh mới không
             if ($request->hasFile('image')) {
                 $validator = Validator::make($request->all(), [
                     'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+                ], [
+                    'image.image' => 'Tệp tải lên phải là hình ảnh.',
+                    'image.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
+                    'image.max' => 'Kích thước hình ảnh tối đa là 2048 KB.',
                 ]);
 
-                // Nếu validation không thành công, trả về lỗi
                 if ($validator->fails()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Validation error',
+                        'message' => 'Lỗi xác thực',
                         'errors' => $validator->errors(),
                     ], 400);
                 }
 
-                // Upload file ảnh mới và lấy tên file
                 $file = $request->file('image');
                 $path = public_path('uploads/images');
                 $file_name = Common::uploadFile($file, $path);
-
-                // Cập nhật dữ liệu với file ảnh mới
                 $profile->image = $file_name;
             }
 
-            // Cập nhật các trường dữ liệu khác
             $profile->name = $request->input('name', $profile->name);
             $profile->title = $request->input('title', $profile->title);
             $profile->phone = $request->input('phone', $profile->phone);
@@ -133,8 +134,6 @@ class ProfilesController extends Controller
             $profile->users_id = auth()->user()->id;
             $profile->save();
 
-
-            // Gán dữ liệu đã cập nhật
             $data = [
                 'users_id' => $profile->users_id,
                 'id' => $profile->id,
@@ -143,16 +142,16 @@ class ProfilesController extends Controller
                 'phone' => $profile->phone,
                 'email' => $profile->email,
                 'birthday' => $profile->birthday,
-                'gender' => $profile->gender == 1 ? 'Male' : 'Female',
+                'gender' => $profile->gender == 1 ? 'Nam' : 'Nữ',
                 'location' => $profile->location,
                 'website' => $profile->website,
-                'image_url' => url('uploads/images/' . $profile->image), // Xây dựng URL của hình ảnh
+                'image_url' => url('uploads/images/' . $profile->image),
             ];
         }
 
         return response()->json([
             'success' => true,
-            'message' => "Profile saved successfully",
+            'message' => "Lưu thông tin hồ sơ thành công",
             'data' => $data,
             'status_code' => 200
         ]);
