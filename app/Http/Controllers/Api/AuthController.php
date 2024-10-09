@@ -71,6 +71,7 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json([
+                'success' => false,
                 'error' => [
                     'email' => ['Email chưa được đăng ký']
                 ],
@@ -81,8 +82,20 @@ class AuthController extends Controller
         // Kiểm tra xem người dùng đã xác minh email hay chưa
         if (!$user->hasVerifiedEmail()) {
             return response()->json([
+                'success' => false,
                 'error' => [
                     'email' => ['Email chưa được xác minh. Vui lòng kiểm tra email của bạn.']
+                ],
+                'status_code' => 403
+            ], 403);
+        }
+
+        // Kiểm tra trạng thái tài khoản
+        if ($user->status !== Constant::user_status_active) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'account' => ['Tài khoản của bạn đã bị chặn hoạt động.']
                 ],
                 'status_code' => 403
             ], 403);
@@ -91,6 +104,7 @@ class AuthController extends Controller
         // Xác thực người dùng
         if (!Auth::attempt($credentials)) {
             return response()->json([
+                'success' => false,
                 'error' => [
                     'password' => ['Sai mật khẩu']
                 ],
