@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Companies;
 use App\Http\Controllers\Controller;
 use App\Mail\JobApplied;
 use App\Models\Job;
+use App\Utillities\Constant;
 use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -27,18 +28,18 @@ class JobsController extends Controller
         if ($user->companies) {
             // Lấy danh sách công việc của công ty của người dùng hiện tại
             $jobs = $user->companies->jobs()->paginate(5);
-
             $jobsData = $jobs->map(function ($job) {
                 return [
                     'id' => $job->id,
                     'title' => $job->title,
-                    'company' => $job->company ? $job->company->name : null,
+                    'company' => $job->company ? $job->company->company_name : null,
                     'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
                     'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-                    'salary' => $job->salary,
-                    'status' => $job->status,
-                    'featured' => $job->featured,
-                    'address' => $job->address,
+                    'salary_from' => $job->salary_from,
+                    'salary_to' => $job->salary_to,
+                    'status' => $job->status === 3 ? 'Được xác minh' : 'Chưa được xác minh',
+                    'featured' => $job->featured == 1 ? 'Công việc nổi bật' : 'Công việc không nổi bật',
+                    'work_address' => $job->work_address,
                     'description' => $job->description,
                     'skills' => $job->skill->pluck('name')->toArray(),
                     'skill_experience' => $job->skill_experience,
@@ -78,6 +79,7 @@ class JobsController extends Controller
     {
         $user = auth()->user();
         $company = $user->companies->id;
+        $statusJob = Constant::user_status_inactive;
 
         // Validation rules
         $validator = Validator::make($request->all(), [
@@ -105,7 +107,6 @@ class JobsController extends Controller
             'contact_name' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
-            'status' => 'required|integer',
             'featured' => 'required|integer',
             'job_skills' => 'required|array',
             'job_skills.*.name' => 'required|string',
@@ -143,6 +144,8 @@ class JobsController extends Controller
         // Add users_id and company_id to the validated data array.
         $validatedData['users_id'] = $user->id;
         $validatedData['company_id'] = $company;
+        $validatedData['status'] = $statusJob;
+
 
         if (!$company) {
             return response()->json([
@@ -177,7 +180,7 @@ class JobsController extends Controller
                 'salary_from' => $job->salary_from,
                 'salary_to' => $job->salary_to,
                 'education_level' => $job->education_level,
-                'status' => $job->status ? 'inactive' : 'active',
+                'status' => 'inactive',
                 'featured' => $job->featured ? 'active' : 'inactive',
                 'last_date' => $job->last_date,
                 'description' => $job->description,
@@ -196,7 +199,7 @@ class JobsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Công việc và kỹ năng công việc đã được tạo thành công.',
+                'message' => 'Công việc đã được khởi tạo, vui lòng chờ người kiểm duyệt xác minh.',
                 'data' => $jobData,
                 'status_code' => 200
             ]);
@@ -241,17 +244,30 @@ class JobsController extends Controller
         $jobData = [
             'id' => $job->id,
             'title' => $job->title,
-            'salary' => $job->salary,
-            'status' => $job->status,
-            'featured' => $job->featured,
-            'description' => $job->description,
-            'benefits' => $job->benefits,
+            'profession' => $job->profession,
+            'position' => $job->position,
+            'experience_years' => $job->experience_years,
+            'work_address' => $job->work_address,
+            'employment_type' => $job->employment_type,
+            'quantity' => $job->quantity,
+            'salary_from' => $job->salary_from,
+            'salary_to' => $job->salary_to,
+            'education_level' => $job->education_level,
+            'status' => 'inactive',
+            'featured' => $job->featured ? 'active' : 'inactive',
             'last_date' => $job->last_date,
-            'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-            'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-            'skills' => $job->skill->pluck('name')->toArray(),
-            'address' => $job->address,
-            'created_at' => $job->created_at->diffForHumans(),
+            'description' => $job->description,
+            'skill_experience' => $job->skill_experience,
+            'benefits' => $job->benefits,
+            'city' => $job->city,
+            'district' => $job->district,
+            'work_location' => $job->work_location,
+            'latitude' => $job->latitude,
+            'longitude' => $job->longitude,
+            'contact_name' => $job->contact_name,
+            'phone' => $job->phone,
+            'email' => $job->email,
+            'job_skills' => $job->jobSkills->pluck('name')->toArray(),
         ];
 
         // Return data as JSON response
@@ -268,66 +284,124 @@ class JobsController extends Controller
      */
     public function update(Request $request, Job $job)
     {
-        if ($request->user()->id !== $job->company->users_id ) {
+        // Kiểm tra quyền truy cập của người dùng
+        if ($request->user()->id !== $job->company->users_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn không có quyền chỉnh sửa job này.',
                 'status_code' => 403
             ], 403); // 403 là mã lỗi "Forbidden" khi người dùng không có quyền truy cập
         }
+
+        // Xác thực dữ liệu đầu vào
+        $validator = Validator::make($request->all(), [
+            'jobtype_id' => 'nullable|exists:job_types,id',
+            'city_id' => 'nullable|exists:cities,id',
+            'title' => 'nullable|string',
+            'profession' => 'nullable|string',
+            'position' => 'nullable|string',
+            'experience_years' => 'nullable|integer',
+            'work_address' => 'nullable|string',
+            'employment_type' => 'nullable|string',
+            'quantity' => 'nullable|integer',
+            'salary_from' => 'nullable|numeric',
+            'salary_to' => 'nullable|numeric',
+            'education_level' => 'nullable|string',
+            'last_date' => 'nullable|date',
+            'description' => 'nullable|string',
+            'skill_experience' => 'nullable|string',
+            'benefits' => 'nullable|string',
+            'city' => 'nullable|string',
+            'district' => 'nullable|string',
+            'work_location' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'contact_name' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+            'featured' => 'nullable|integer',
+            'job_skills' => 'nullable|array',
+            'job_skills.*.name' => 'nullable|string',
+        ], [
+            'jobtype_id.exists' => 'Loại công việc không hợp lệ.',
+            'city_id.exists' => 'Thành phố không hợp lệ.',
+            'title.string' => 'Tiêu đề phải là một chuỗi.',
+            'profession.string' => 'Nghề nghiệp phải là một chuỗi.',
+            'experience_years.integer' => 'Số năm kinh nghiệm phải là một số nguyên.',
+            'salary_from.numeric' => 'Mức lương bắt đầu phải là một số.',
+            'salary_to.numeric' => 'Mức lương kết thúc phải là một số.',
+            'last_date.date' => 'Ngày kết thúc phải là một ngày hợp lệ.',
+            'email.email' => 'Địa chỉ email không hợp lệ.',
+            'job_skills.array' => 'Kỹ năng công việc phải là một mảng.',
+            'job_skills.*.name.string' => 'Tên kỹ năng phải là một chuỗi.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu đầu vào không hợp lệ.',
+                'errors' => $validator->errors(),
+                'status_code' => 422
+            ], 422); // 422 là mã lỗi "Unprocessable Entity"
+        }
+
         try {
-            // Start a transaction
+            // Bắt đầu giao dịch
             \DB::beginTransaction();
 
-            // Update the job with the request data
-            $job->update([
-                'jobtype_id' => $request->input('jobtype_id'),
-                'city_id' => $request->input('city_id'),
-                'title' => $request->input('title'),
-                'salary' => $request->input('salary'),
-                'status' => $request->input('status'),
-                'featured' => $request->input('featured'),
-                'description' => $request->input('description'),
-                'last_date' => $request->input('last_date'),
-                'address' => $request->input('address'),
-                'skill_experience' => $request->input('skill_experience'),
-                'benefits' => $request->input('benefits'),
-            ]);
+            // Cập nhật thông tin công việc
+            $job->update($request->only([
+                'jobtype_id', 'city_id', 'title', 'salary', 'featured',
+                'description', 'last_date', 'address', 'skill_experience', 'benefits'
+            ]));
 
-            // If 'job_skills' are provided in the request, update job skills accordingly
-            // If 'job_skills' are provided in the request, update job skills accordingly
+            // Cập nhật kỹ năng công việc nếu có
             if ($request->has('job_skills')) {
                 $jobSkillsData = $request->input('job_skills');
                 $existingSkills = $job->jobSkills()->pluck('name')->toArray();
 
-                // Delete job skills that are not in the updated list
+                // Xóa các kỹ năng không còn trong danh sách cập nhật
                 foreach ($existingSkills as $existingSkill) {
-                    if (! in_array($existingSkill, array_column($jobSkillsData, 'name'))) {
+                    if (!in_array($existingSkill, array_column($jobSkillsData, 'name'))) {
                         $job->jobSkills()->where('name', $existingSkill)->delete();
                     }
                 }
 
-                // Attach the updated job skills to the job
+                // Cập nhật hoặc tạo mới các kỹ năng công việc
                 foreach ($jobSkillsData as $skillData) {
                     $job->jobSkills()->updateOrCreate(['name' => $skillData['name']], $skillData);
                 }
             }
 
-            // Commit the transaction
+            // Cam kết giao dịch
             \DB::commit();
 
             $jobData = [
                 'id' => $job->id,
                 'title' => $job->title,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'salary' => $job->salary,
-                'status' => $job->status ? 'active' : 'inactive',
-                'featured' => $job->featured ?  'active' : 'inactive',
-                'address' => $job->address,
+                'profession' => $job->profession,
+                'position' => $job->position,
+                'experience_years' => $job->experience_years,
+                'work_address' => $job->work_address,
+                'employment_type' => $job->employment_type,
+                'quantity' => $job->quantity,
+                'salary_from' => $job->salary_from,
+                'salary_to' => $job->salary_to,
+                'education_level' => $job->education_level,
+                'status' => 'inactive',
+                'featured' => $job->featured ? 'active' : 'inactive',
+                'last_date' => $job->last_date,
                 'description' => $job->description,
                 'skill_experience' => $job->skill_experience,
-                'last_date' => $job->last_date,
                 'benefits' => $job->benefits,
+                'city' => $job->city,
+                'district' => $job->district,
+                'work_location' => $job->work_location,
+                'latitude' => $job->latitude,
+                'longitude' => $job->longitude,
+                'contact_name' => $job->contact_name,
+                'phone' => $job->phone,
+                'email' => $job->email,
                 'job_skills' => $job->jobSkills->pluck('name')->toArray(),
             ];
 
@@ -338,15 +412,16 @@ class JobsController extends Controller
                 'status_code' => 200
             ]);
         } catch (\Exception $e) {
-            // Rollback the transaction
+            // Lùi lại giao dịch nếu có lỗi xảy ra
             \DB::rollBack();
 
             \Log::error($e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Job update failed.',
-            ], 500);
+                'message' => 'Cập nhật job thất bại.',
+                'status_code' => 500
+            ], 500); // 500 là mã lỗi "Internal Server Error"
         }
     }
 

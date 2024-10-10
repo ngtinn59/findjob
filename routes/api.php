@@ -2,14 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\{AdminController,
+    AdminJobController,
+    AdminStatsController,
     AdminUserController,
     CitiesController,
     CompanysizesController,
     CompanytypesController,
     CountriesController,
     JobtypesControllerController,
-    CompaniesController as AdminCompaniesController,
-    JobsController as AdminJobsController};
+    CompaniesController as AdminCompaniesController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
     CompaniesSkillsController,
@@ -170,16 +171,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/companies', AdminCompaniesController::class);
         Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
 
-        Route::resource('/jobs', AdminJobsController::class);
-        Route::post('/jobs/{jobId}/confirm', [JobController::class, 'confirmJob']);
+        route::resource('/jobs', AdminJobController::class);
+        Route::post('/jobs/{jobId}/confirm', [AdminJobController::class, 'confirmJob']);
+        Route::post('/jobs/{jobId}/un-confirm', [AdminJobController::class, 'unconfirmJob']);
 
+
+        Route::resource('/users', AdminUserController::class);
         Route::post('/block-user/{id}', [AdminUserController::class, 'blockUser']);
         Route::post('/unblock-user/{id}', [AdminUSerController::class, 'unblockUser']);
-
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::get('/users/{id}', [AdminUserController::class, 'show']);
         Route::put('/users/{id}', [AdminUserController::class, 'update']);
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+
+
+        //Thống kê
+
+        Route::get('/statistics', [AdminStatsController::class, 'index']);
+
     });
 });

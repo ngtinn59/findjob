@@ -14,23 +14,24 @@ return new class extends Migration
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('users_id');
-            $table->foreignId('country_id');
-            $table->foreignId('city_id');
+            $table->foreignId('country_id')->nullable();
+            $table->foreignId('city_id')->nullable();
             $table->foreignId('company_size_id')->nullable();
             $table->foreignId('company_type_id')->nullable();
-            $table->text('name')->nullable();
+            $table->text('company_name')->nullable();
             $table->string('phone')->nullable();
-            $table->text('email')->nullable();
+            $table->text('company_email')->nullable();
             $table->text('tax_code')->nullable();
-            $table->date('Date_of_establishment')->nullable();
-            $table->text('Working_days')->nullable();
-            $table->text('Overtime_policy')->nullable();
-            $table->text('webstie')->nullable();
+            $table->date('date_of_establishment')->nullable();
+            $table->text('working_days')->nullable();
+            $table->text('overtime_policy')->nullable();
+            $table->text('website')->nullable();
             $table->text('facebook')->nullable();
             $table->text('logo')->nullable();
             $table->text('banner')->nullable();
             $table->text('address')->nullable();
             $table->text('description')->nullable();
+            $table->boolean('approved')->default(false); // Trạng thái xác nhận, mặc định là chưa xác nhận
             $table->timestamps();
         });
     }
