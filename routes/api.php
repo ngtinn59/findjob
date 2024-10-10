@@ -1,15 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Admin\{
+use App\Http\Controllers\Api\Admin\{AdminController,
+    AdminUserController,
     CitiesController,
     CompanysizesController,
     CompanytypesController,
     CountriesController,
     JobtypesControllerController,
     CompaniesController as AdminCompaniesController,
-    JobsController as AdminJobsController
-};
+    JobsController as AdminJobsController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
     CompaniesSkillsController,
@@ -171,7 +171,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
 
         Route::resource('/jobs', AdminJobsController::class);
-        Route::post('/admin/jobs/{jobId}/confirm', [JobController::class, 'confirmJob']);
+        Route::post('/jobs/{jobId}/confirm', [JobController::class, 'confirmJob']);
 
+        Route::post('/block-user/{id}', [AdminUserController::class, 'blockUser']);
+        Route::post('/unblock-user/{id}', [AdminUSerController::class, 'unblockUser']);
+
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::post('/users', [AdminUserController::class, 'store']);
+        Route::get('/users/{id}', [AdminUserController::class, 'show']);
+        Route::put('/users/{id}', [AdminUserController::class, 'update']);
+        Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
     });
 });

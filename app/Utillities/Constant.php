@@ -27,8 +27,4 @@ class Constant
         self::user_status_inactive => 'inactive',
     ];
 
-
-
-
-
 }
