@@ -31,6 +31,11 @@ class AdminStatsController extends Controller
 
         $usersEmployer = User::where('account_type', Constant::user_level_employer)->count();
         $usersDeveloper = User::where('account_type', Constant::user_level_developer)->count();
+        $jobsByLocation = Job::select('cities.name as city_name', \DB::raw('COUNT(*) as count'))
+            ->join('cities', 'jobs.city_id', '=', 'cities.id') // Thực hiện join với bảng cities
+            ->groupBy('jobs.city_id', 'cities.name') // Nhóm theo city_id và tên thành phố
+            ->get();
+
 
         // Chuẩn bị dữ liệu phản hồi
         $data = [
@@ -39,7 +44,9 @@ class AdminStatsController extends Controller
             'total_companies' => $totalCompanies,
             'jobs_by_date' => $jobsByDate,
             'total_employer' => $usersEmployer,
-            '$usersEmployer' => $usersDeveloper,
+            'usersEmployer' => $usersDeveloper,
+            'jobsByLocation' => $jobsByLocation,
+
         ];
 
         // Trả về JSON response

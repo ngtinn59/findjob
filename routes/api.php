@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     CompanysizesController,
     CompanytypesController,
     CountriesController,
+    DistrictsController,
     JobtypesControllerController,
     CompaniesController as AdminCompaniesController};
 use App\Http\Controllers\Api\AuthController;
@@ -77,6 +78,9 @@ Route::get('/company-sizes', [CompanysizesController::class, 'index']);
 
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
+Route::resource('/districts', DistrictsController::class);
+Route::get('countries/{country}/cities', [CitiesController::class, 'getCitiesByCountry']);
+Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
 
 // User Jobs
 
@@ -164,8 +168,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
         Route::resource('/job-types', JobtypesControllerController::class);
+
         Route::resource('/countries', CountriesController::class);
         Route::resource('/cities', CitiesController::class);
+        Route::resource('/districts', DistrictsController::class);
+        Route::get('countries/{country}/cities', [CitiesController::class, 'getCitiesByCountry']);
+        Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
+
+
         Route::resource('/company-types', CompanytypesController::class);
         Route::resource('/company-sizes', CompanysizesController::class);
         Route::resource('/companies', AdminCompaniesController::class);

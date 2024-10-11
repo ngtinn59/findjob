@@ -27,9 +27,13 @@ return new class extends Migration
             $table->text('overtime_policy')->nullable();
             $table->text('website')->nullable();
             $table->text('facebook')->nullable();
+            $table->text('youtube')->nullable();
+            $table->text('linked')->nullable();
             $table->text('logo')->nullable();
             $table->text('banner')->nullable();
             $table->text('address')->nullable();
+            $table->text('latitude')->nullable();
+            $table->text('longitude')->nullable();
             $table->text('description')->nullable();
             $table->boolean('approved')->default(false); // Trạng thái xác nhận, mặc định là chưa xác nhận
             $table->timestamps();
