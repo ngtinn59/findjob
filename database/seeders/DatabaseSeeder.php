@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CompanytypeTableSeeder::class,
             CountriesTableSeeder::class,
             CitiesTableSeeder::class,
+            DistrictsTableSeeder::class
         ]);
     }
 }
