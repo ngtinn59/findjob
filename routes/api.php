@@ -11,7 +11,8 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     CountriesController,
     DistrictsController,
     JobtypesControllerController,
-    CompaniesController as AdminCompaniesController};
+    CompaniesController as AdminCompaniesController,
+    LanguagesController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
     CompaniesSkillsController,
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\Resume\{AboutmeController,
     EducationController,
     ExperiencesController,
     GetResumeController,
+    LanguageSkillsController,
     ObjectivesController,
     ProfilesController,
     ProjectsController,
@@ -136,6 +138,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/resume', GetResumeController::class);
         Route::resource('/experiences', ExperiencesController::class);
         Route::resource('/objectives', ObjectivesController::class);
+        Route::resource('/language-skills', LanguageSkillsController::class);
+
     });
 
     // CV Routes
@@ -199,6 +203,8 @@ Route::middleware('auth:sanctum')->group(function () {
         //Thống kê
 
         Route::get('/statistics', [AdminStatsController::class, 'index']);
+
+        Route::resource('/languages', LanguagesController::class);
 
     });
 });
