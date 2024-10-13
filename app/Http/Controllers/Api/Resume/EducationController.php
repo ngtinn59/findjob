@@ -18,7 +18,6 @@ class EducationController extends Controller
     public function index()
     {
         $user =  auth()->user();
-        dd($user);
         $profile = $user->profile;
         $profile_id = $profile->id;
         $educations = educations::where("profiles_id", $profile_id)->get();

@@ -19,7 +19,11 @@ class DatabaseSeeder extends Seeder
             CompanytypeTableSeeder::class,
             CountriesTableSeeder::class,
             CitiesTableSeeder::class,
-            DistrictsTableSeeder::class
+            DistrictsTableSeeder::class,
+            ProfessionsTableSeeder::class,
+            EmploymentTypeSeeder::class,
+            EducationLevelsTableSeeder::class,
+
         ]);
     }
 }

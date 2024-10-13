@@ -10,9 +10,12 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     CompanytypesController,
     CountriesController,
     DistrictsController,
+    EducationLevelsController,
+    EmploymentTypesController,
     JobtypesControllerController,
     CompaniesController as AdminCompaniesController,
-    LanguagesController};
+    LanguagesController,
+    ProfessionsController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
     CompaniesSkillsController,
@@ -205,6 +208,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/statistics', [AdminStatsController::class, 'index']);
 
         Route::resource('/languages', LanguagesController::class);
+
+        Route::resource('/professions', ProfessionsController::class);
+
+        Route::resource('/employment-types', EmploymentTypesController::class);
+
+        Route::resource('/education-levels', EducationLevelsController::class);
+
+
 
     });
 });
