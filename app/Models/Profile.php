@@ -54,7 +54,7 @@ class Profile extends Model
 
     public function languageskills()
     {
-        return $this->hasMany(LanguageSkill::class);
+        return $this->hasMany(LanguageSkill::class,'profiles_id','id');
     }
 
     public function country()

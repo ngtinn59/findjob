@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Employer\CandidatesController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\{AdminController,
     AdminJobController,
@@ -107,7 +108,8 @@ Route::delete('logout', [AuthController::class, 'logout']);
 
 // Chat Real time
 
-Route::get('resume/objectives/search', [ObjectivesController::class, 'search']);
+
+
 //User Jobs
 Route::get('/list-jobs', [JobsController::class, 'indexShow']);
 Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
@@ -178,6 +180,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/applications', [JobApplicationController::class, 'index']);
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
         Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);
+
+        Route::get('resume/objectives/search', [ObjectivesController::class, 'search']);
+        Route::get('resume/objectives/search-keyword', [ObjectivesController::class, 'searchByKeyword']);
+
+        Route::post('employer/candidates/save/{id}', [CandidatesController::class, 'saveCandidate']);
+        Route::delete('employer/candidates/un-save/{id}', [CandidatesController::class, 'unsaveCandidate']);
+
     });
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
