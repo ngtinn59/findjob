@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('objectives', function (Blueprint $table) {
             $table->id();
             $table->string('desired_position')->nullable(); // Vị trí mong muốn
-            $table->unsignedBigInteger('desired_level_id')->nullable(); // Khóa ngoại tới bảng education_levels
+            $table->unsignedBigInteger('desired_level_id')->nullable();
+            $table->unsignedBigInteger('education_level_id')->nullable();
+
             $table->unsignedBigInteger('profession_id')->nullable(); // Khóa ngoại tới bảng professions
             $table->unsignedBigInteger('employment_type_id')->nullable(); // Khóa ngoại tới bảng employment_types
             $table->integer('experience_years')->nullable(); // Kinh nghiệm (năm)
@@ -33,7 +35,7 @@ return new class extends Migration
             $table->foreign('country_id')->references('id')->on('countries')->onDelete('set null'); // Set null if the country is deleted
             $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null'); // Set null if the city is deleted
             $table->foreign('district_id')->references('id')->on('districts')->onDelete('set null'); // Set null if the district is deleted
-            $table->foreign('desired_level_id')->references('id')->on('education_levels')->onDelete('set null');
+            $table->foreign('education_level_id')->references('id')->on('education_levels')->onDelete('set null');
             $table->foreign('profession_id')->references('id')->on('professions')->onDelete('set null');
             $table->foreign('employment_type_id')->references('id')->on('employment_types')->onDelete('set null');
             $table->foreign('profiles_id')->references('id')->on('profiles')->onDelete('cascade');

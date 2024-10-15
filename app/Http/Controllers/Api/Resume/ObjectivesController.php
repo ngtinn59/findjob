@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Resume;
 
 use App\Http\Controllers\Controller;
 use App\Models\aboutme;
+use App\Models\Cv;
 use App\Models\Objective;
+use App\Utillities\Common;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -56,15 +58,24 @@ class ObjectivesController extends Controller
         // Chuyển đổi dữ liệu để trả về dưới dạng JSON
         $objectiveData = $objectives->map(function ($objective) {
             return [
-                'desired_position' => $objective->desired_position,
-                'desired_level' => $objective->desired_level,
-                'education_level' => $objective->education_level,
-                'experience_years' => $objective->experience_years,
-                'profession' => $objective->profession,
-                'work_address' => $objective->work_address,
-                'expected_salary' => $objective->expected_salary,
-                'work_location' => $objective->work_location,
-                'employment_type' => $objective->employment_type,
+                    'id' => $objective->id, // ID của bản ghi vừa tạo
+                    'desired_position' => $objective->desired_position,
+                    'desired_level_id' => $objective->desiredLevel->name ?? null,
+                    'profession_id' => $objective->profession->name ?? null,
+                    'employment_type_id' => $objective->employmentType->name ?? null,
+                    'experience_years' => $objective->experience_years,
+                    'work_address' => $objective->work_address,
+                    'education_level_id' => $objective->educationLevel->name ?? null,
+                    'salary_from' => $objective->salary_from,
+                    'salary_to' => $objective->salary_to,
+                    'file' =>  asset('cvs/' . $objective->file),
+                    'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
+                    'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+                    'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+                    'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                    'profiles_id' => $objective->profiles_id,
+                    'created_at' => $objective->created_at, // Thêm thời gian tạo nếu cần
+                    'updated_at' => $objective->updated_at, // Thêm thời gian cập nhật nếu cần
             ];
         });
 
@@ -86,45 +97,40 @@ class ObjectivesController extends Controller
         $profile = $user->profile;
         $profile_id = $profile->id; // Lấy profile_id từ người dùng
 
-        $data = [
-            'desired_position' => $request->input('desired_position'),
-            'desired_level' => $request->input('desired_level'),
-            'education_level' => $request->input('education_level'),
-            'experience_years' => $request->input('experience_years'),
-            'profession' => $request->input('profession'),
-            'work_address' => $request->input('work_address'),
-            'expected_salary' => $request->input('expected_salary'),
-            'work_location' => $request->input('work_location'),
-            'employment_type' => $request->input('employment_type'),
-            'profiles_id' => $profile_id, // Thêm profile_id vào dữ liệu
-        ];
-
-
-        $validator = Validator::make($data, [
-            'desired_position' => 'required',
-            'desired_level' => 'required',
-            'education_level' => 'required',
-            'experience_years' => 'required',
-            'profession' => 'required',
-            'work_address' => 'required',
-            'work_location' => 'required',
-            'employment_type' => 'required',
-            'expected_salary' => 'required',
-            'profiles_id' => 'required|exists:profiles,id',
+        // Kiểm tra và validate các trường nhập liệu
+        $validator = Validator::make($request->all(), [
+            'desired_position' => 'required|string|max:255',
+            'desired_level_id' => 'required|integer',
+            'profession_id' => 'required|integer',
+            'employment_type_id' => 'required|integer',
+            'experience_years' => 'required|integer|min:0',
+            'work_address' => 'required|string|max:255',
+            'education_level_id' => 'required|integer',
+            'salary_from' => 'required|integer|min:0',
+            'salary_to' => 'required|integer|min:0|gte:salary_from',
+            'status' => 'required',
+            'country_id' => 'required|integer',
+            'city_id' => 'required|integer',
+            'district_id' => 'required|integer',
+            'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048', // Kiểm tra file nếu có
         ], [
             'desired_position.required' => 'Vui lòng nhập vị trí mong muốn.',
-            'desired_level.required' => 'Vui lòng nhập cấp bậc mong muốn.',
-            'education_level.required' => 'Vui lòng nhập trình độ học vấn.',
+            'desired_level_id.required' => 'Vui lòng chọn cấp bậc mong muốn.',
+            'profession_id.required' => 'Vui lòng chọn nghề nghiệp.',
+            'employment_type_id.required' => 'Vui lòng chọn hình thức làm việc.',
             'experience_years.required' => 'Vui lòng nhập số năm kinh nghiệm.',
-            'profession.required' => 'Vui lòng nhập ngành nghề.',
             'work_address.required' => 'Vui lòng nhập địa chỉ làm việc.',
-            'work_location.required' => 'Vui lòng nhập nơi làm việc.',
-            'employment_type.required' => 'Vui lòng nhập hình thức làm việc.',
-            'expected_salary.required' => 'Vui lòng nhập mức lương mong muốn.',
-            'profiles_id.required' => 'profiles_id là bắt buộc.',
-            'profiles_id.exists' => 'profiles_id không hợp lệ.',
+            'education_level_id.required' => 'Vui lòng chọn trình độ học vấn.',
+            'salary_from.required' => 'Vui lòng nhập mức lương bắt đầu.',
+            'salary_to.required' => 'Vui lòng nhập mức lương kết thúc.',
+            'salary_to.gte' => 'Mức lương kết thúc phải lớn hơn hoặc bằng mức lương bắt đầu.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'country_id.required' => 'Vui lòng chọn quốc gia.',
+            'city_id.required' => 'Vui lòng chọn thành phố.',
+            'district_id.required' => 'Vui lòng chọn quận/huyện.',
+            'file.mimes' => 'Tệp tin phải có định dạng pdf, doc, hoặc docx.',
+            'file.max' => 'Tệp tin không được vượt quá 2MB.',
         ]);
-
 
         if ($validator->fails()) {
             return response()->json([
@@ -135,22 +141,143 @@ class ObjectivesController extends Controller
             ], 422);
         }
 
-        $data = $validator->validated();
+        $validatedData = $validator->validated();
 
+        // Kiểm tra tệp tin và xử lý upload file nếu có
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $file_name = Common::uploadFile($file, public_path('cvs')); // Sử dụng lớp Common để upload file
+            $validatedData['file'] = $file_name; // Lưu tên file vào dữ liệu
+        }
 
-        // Update existing record or create a new one
-        $objective = Objective::updateOrCreate(
-            ['profiles_id' => $profile_id], // Điều kiện tìm kiếm
-            $data // Dữ liệu để tạo hoặc cập nhật
-        );
+        // Thêm profile_id vào dữ liệu đã được validate
+        $validatedData['profiles_id'] = $profile_id;
 
-        $status_code = $objective->wasRecentlyCreated ? 201 : 200; // 201 nếu mới tạo, 200 nếu cập nhật
+        // Tạo mới bản ghi
+        $objective = Objective::create($validatedData);
+
+        $responseData = [
+            'id' => $objective->id, // ID của bản ghi vừa tạo
+            'desired_position' => $objective->desired_position,
+            'desired_level_id' => $objective->desiredLevel->name ?? null,
+            'profession_id' => $objective->profession->name ?? null,
+            'employment_type_id' => $objective->employmentType->name ?? null,
+            'experience_years' => $objective->experience_years,
+            'work_address' => $objective->work_address,
+            'education_level_id' => $objective->educationLevel->name ?? null,
+            'salary_from' => $objective->salary_from,
+            'salary_to' => $objective->salary_to,
+            'file' =>  asset('cvs/' . $objective->file),
+            'status' => $objective->status,
+            'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+            'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+            'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+            'profiles_id' => $objective->profiles_id,
+            'created_at' => $objective->created_at, // Thêm thời gian tạo nếu cần
+            'updated_at' => $objective->updated_at, // Thêm thời gian cập nhật nếu cần
+        ];
+
 
         return response()->json([
             'success' => true,
             'message' => "Thực hiện thành công",
-            "data" => $objective,
-            'status_code' => $status_code
+            'data' => $responseData, // Trả về dữ liệu đã được tùy chỉnh
+            'status_code' => 200,
+        ]);
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        // Xác thực người dùng
+        $user = auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id; // Lấy profile_id từ người dùng
+
+        // Tìm đối tượng theo ID
+        $objective = Objective::findOrFail($id);
+
+        // Kiểm tra và validate các trường nhập liệu
+        $validator = Validator::make($request->all(), [
+            'desired_position' => '|string|max:255',
+            'desired_level_id' => '|integer',
+            'profession_id' => '|integer',
+            'employment_type_id' => '|integer',
+            'experience_years' => '|integer|min:0',
+            'work_address' => '|string|max:255',
+            'education_level_id' => '|integer',
+            'salary_from' => '|integer|min:0',
+            'salary_to' => '|integer|min:0|gte:salary_from',
+            'status' => '',
+            'country_id' => '|integer',
+            'city_id' => '|integer',
+            'district_id' => '|integer',
+            'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048', // Kiểm tra file nếu có
+        ], [
+            'salary_to.gte' => 'Mức lương kết thúc phải lớn hơn hoặc bằng mức lương bắt đầu.',
+            'file.mimes' => 'Tệp tin phải có định dạng pdf, doc, hoặc docx.',
+            'file.max' => 'Tệp tin không được vượt quá 2MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực',
+                'errors' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
+
+        $validatedData = $validator->validated();
+
+        // Kiểm tra tệp tin và xử lý upload file nếu có
+        if ($request->hasFile('file')) {
+            // Xóa file cũ nếu cần thiết (nếu có tệp tin trước đó)
+            if ($objective->file) {
+                $oldFilePath = public_path('cvs/' . $objective->file);
+                if (file_exists($oldFilePath)) {
+                    unlink($oldFilePath); // Xóa file cũ
+                }
+            }
+
+            $file = $request->file('file');
+            $file_name = Common::uploadFile($file, public_path('cvs')); // Sử dụng lớp Common để upload file
+            $validatedData['file'] = $file_name;
+            // Lưu tên file vào dữ liệu
+        }
+
+        // Cập nhật profile_id vào dữ liệu đã được validate
+        $validatedData['profiles_id'] = $profile_id;
+
+        // Cập nhật thông tin đối tượng
+        $objective->update($validatedData);
+
+        $responseData = [
+            'id' => $objective->id, // ID của bản ghi vừa cập nhật
+            'desired_position' => $objective->desired_position,
+            'desired_level_id' => $objective->desiredLevel->name ?? null,
+            'profession_id' => $objective->profession->name ?? null,
+            'employment_type_id' => $objective->employmentType->name ?? null,
+            'experience_years' => $objective->experience_years,
+            'work_address' => $objective->work_address,
+            'education_level_id' => $objective->educationLevel->name ?? null,
+            'salary_from' => $objective->salary_from,
+            'salary_to' => $objective->salary_to,
+            'file' => asset('cvs/' . $objective->file),
+            'status' => $objective->status,
+            'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+            'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+            'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+            'profiles_id' => $objective->profiles_id,
+            'created_at' => $objective->created_at,
+            'updated_at' => $objective->updated_at,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cập nhật thành công",
+            'data' => $responseData, // Trả về dữ liệu đã được tùy chỉnh
+            'status_code' => 200,
         ]);
     }
 
@@ -239,5 +366,138 @@ class ObjectivesController extends Controller
         ]);
     }
 
+    public function uploadFile(Request $request, $id)
+    {
+        // Xác thực người dùng
+        $user = auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id; // Lấy profile_id từ người dùng
+
+        // Tìm đối tượng theo ID
+        $objective = Objective::findOrFail($id);
+
+        // Kiểm tra và validate các trường nhập liệu
+        $validator = Validator::make($request->all(), [
+            'desired_position' => '|string|max:255',
+            'desired_level_id' => '|integer',
+            'profession_id' => '|integer',
+            'employment_type_id' => '|integer',
+            'experience_years' => '|integer|min:0',
+            'work_address' => '|string|max:255',
+            'education_level_id' => '|integer',
+            'salary_from' => '|integer|min:0',
+            'salary_to' => '|integer|min:0|gte:salary_from',
+            'status' => '',
+            'country_id' => '|integer',
+            'city_id' => '|integer',
+            'district_id' => '|integer',
+            'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048', // Kiểm tra file nếu có
+        ], [
+            'salary_to.gte' => 'Mức lương kết thúc phải lớn hơn hoặc bằng mức lương bắt đầu.',
+            'file.mimes' => 'Tệp tin phải có định dạng pdf, doc, hoặc docx.',
+            'file.max' => 'Tệp tin không được vượt quá 2MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực',
+                'errors' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
+
+        $validatedData = $validator->validated();
+
+        // Kiểm tra tệp tin và xử lý upload file nếu có
+        if ($request->hasFile('file')) {
+            // Xóa file cũ nếu cần thiết (nếu có tệp tin trước đó)
+            if ($objective->file) {
+                $oldFilePath = public_path('cvs/' . $objective->file);
+                if (file_exists($oldFilePath)) {
+                    unlink($oldFilePath); // Xóa file cũ
+                }
+            }
+
+            $file = $request->file('file');
+            $file_name = Common::uploadFile($file, public_path('cvs')); // Sử dụng lớp Common để upload file
+            $validatedData['file'] = $file_name;
+            // Lưu tên file vào dữ liệu
+        }
+
+        // Cập nhật profile_id vào dữ liệu đã được validate
+        $validatedData['profiles_id'] = $profile_id;
+
+        // Cập nhật thông tin đối tượng
+        $objective->update($validatedData);
+
+        $responseData = [
+            'id' => $objective->id, // ID của bản ghi vừa cập nhật
+            'desired_position' => $objective->desired_position,
+            'desired_level_id' => $objective->desiredLevel->name ?? null,
+            'profession_id' => $objective->profession->name ?? null,
+            'employment_type_id' => $objective->employmentType->name ?? null,
+            'experience_years' => $objective->experience_years,
+            'work_address' => $objective->work_address,
+            'education_level_id' => $objective->educationLevel->name ?? null,
+            'salary_from' => $objective->salary_from,
+            'salary_to' => $objective->salary_to,
+            'file' => asset('cvs/' . $objective->file),
+            'status' => $objective->status,
+            'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+            'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+            'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+            'profiles_id' => $objective->profiles_id,
+            'created_at' => $objective->created_at,
+            'updated_at' => $objective->updated_at,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cập nhật thành công",
+            'data' => $responseData, // Trả về dữ liệu đã được tùy chỉnh
+            'status_code' => 200,
+        ]);
+    }
+
+
+    public function show (Objective $objective): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        if ($objective->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to the language skill',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => [
+                'id' => $objective->id, // ID của bản ghi vừa cập nhật
+                'desired_position' => $objective->desired_position,
+                'desired_level_id' => $objective->desiredLevel->name ?? null,
+                'profession_id' => $objective->profession->name ?? null,
+                'employment_type_id' => $objective->employmentType->name ?? null,
+                'experience_years' => $objective->experience_years,
+                'work_address' => $objective->work_address,
+                'education_level_id' => $objective->educationLevel->name ?? null,
+                'salary_from' => $objective->salary_from,
+                'salary_to' => $objective->salary_to,
+                'file' => asset('cvs/' . $objective->file),
+                'status' => $objective->status,
+                'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+                'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+                'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                'profiles_id' => $objective->profiles_id,
+                'created_at' => $objective->created_at,
+                'updated_at' => $objective->updated_at,
+            ],
+            'status_code' => 200
+        ]);
+    }
 
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     CompanysizesController,
     CompanytypesController,
     CountriesController,
+    DesiredLevelsController,
     DistrictsController,
     EducationLevelsController,
     EmploymentTypesController,
@@ -141,6 +142,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/resume', GetResumeController::class);
         Route::resource('/experiences', ExperiencesController::class);
         Route::resource('/objectives', ObjectivesController::class);
+        Route::put('/objectives/{id}/upload', [ObjectivesController::class,'uploadFile']);
+
         Route::resource('/language-skills', LanguageSkillsController::class);
 
     });
@@ -215,6 +218,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::resource('/education-levels', EducationLevelsController::class);
 
+        Route::resource('/desired-levels', DesiredLevelsController::class);
 
 
     });

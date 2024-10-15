@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             ProfessionsTableSeeder::class,
             EmploymentTypeSeeder::class,
             EducationLevelsTableSeeder::class,
-
+            DesiredLevelsTableSeeder::class
         ]);
     }
 }
