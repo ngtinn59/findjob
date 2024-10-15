@@ -57,6 +57,10 @@ class Objective extends Model
         return $this->belongsTo(DesiredLevel::class, 'desired_level_id');
     }
 
+    public function experienceLevel()
+    {
+        return $this->belongsTo(ExperienceLevel::class, 'experience_level_id');
+    }
 
 
 }

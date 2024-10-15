@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     DistrictsController,
     EducationLevelsController,
     EmploymentTypesController,
+    ExperienceLevelsController,
     JobtypesControllerController,
     CompaniesController as AdminCompaniesController,
     LanguagesController,
@@ -171,6 +172,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(CheckUserRole::class)->group(function () {
         Route::resource('jobs', JobsController::class);
+        Route::get('/jobs/suggest-jobs', [JobsController::class, 'searchForEmployer']);
+
         Route::post('/process_application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
@@ -221,6 +224,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::resource('/desired-levels', DesiredLevelsController::class);
 
+        Route::resource('/experience-levels', ExperienceLevelsController::class);
 
     });
 });
