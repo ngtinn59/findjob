@@ -143,6 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/experiences', ExperiencesController::class);
         Route::resource('/objectives', ObjectivesController::class);
         Route::put('/objectives/{id}/upload', [ObjectivesController::class,'uploadFile']);
+        Route::put('/objectives/{id}/status', [ObjectivesController::class, 'updateStatus']);
 
         Route::resource('/language-skills', LanguageSkillsController::class);
 

@@ -264,7 +264,7 @@ class ObjectivesController extends Controller
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
             'file' => asset('cvs/' . $objective->file),
-            'status' => $objective->status,
+            'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
             'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
             'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
             'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
@@ -443,7 +443,7 @@ class ObjectivesController extends Controller
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
             'file' => asset('cvs/' . $objective->file),
-            'status' => $objective->status,
+            'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
             'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
             'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
             'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
@@ -488,7 +488,7 @@ class ObjectivesController extends Controller
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
                 'file' => asset('cvs/' . $objective->file),
-                'status' => $objective->status,
+                'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
                 'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
                 'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
                 'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
@@ -500,4 +500,54 @@ class ObjectivesController extends Controller
         ]);
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        // Xác thực người dùng
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        // Tìm đối tượng Objective theo ID
+        $objective = Objective::findOrFail($id);
+
+        // Xác thực rằng mục tiêu thuộc về hồ sơ của người dùng
+        if ($objective->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền cập nhật trạng thái của mục tiêu này.',
+                'status_code' => 403,
+            ], 403);
+        }
+
+        // Validate dữ liệu
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:,3,4', // Các giá trị status có thể là  3, 4
+        ], [
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xác thực',
+                'errors' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
+
+        // Cập nhật trạng thái của mục tiêu
+        $objective->status = $request->input('status');
+        $objective->save();
+
+        // Trả về phản hồi JSON với dữ liệu đã cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Trạng thái đã được cập nhật thành công!',
+            'data' => [
+                'id' => $objective->id,
+                'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
+            ],
+            'status_code' => 200,
+        ]);
+    }
 }
