@@ -30,22 +30,12 @@ class JobsController extends Controller
             $jobs = $user->companies->jobs()->paginate(5);
             $jobsData = $jobs->map(function ($job) {
                 return [
-                    'id' => $job->id,
+                    'job_id' => $job->id,
                     'title' => $job->title,
-                    'company' => $job->company ? $job->company->company_name : null,
-                    'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                    'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-                    'salary_from' => $job->salary_from,
-                    'salary_to' => $job->salary_to,
-                    'status' => $job->status === 3 ? 'Được xác minh' : 'Chưa được xác minh',
-                    'featured' => $job->featured == 1 ? 'Công việc nổi bật' : 'Công việc không nổi bật',
-                    'work_address' => $job->work_address,
-                    'description' => $job->description,
-                    'skills' => $job->skill->pluck('name')->toArray(),
-                    'skill_experience' => $job->skill_experience,
-                    'benefits' => $job->benefits,
+                    'featured' => $statusText = ($job->featured == 1) ? 'Tuyển gấp' : (($job->featured == 0) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
+                    'created_at' => $job->created_at->format('Y-m-d H:i:s'),
                     'last_date' => $job->last_date,
-                    'created_at' => $job->created_at->diffForHumans(),
+                    'status' => $statusText = ($job->status == 3) ? 'Đã duyệt' : (($job->status == 4) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
                 ];
             });
 
@@ -78,163 +68,111 @@ class JobsController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        $company = $user->companies->id;
-        $statusJob = Constant::user_status_inactive;
+        $company = $user->companies->id ?? null; // Check if the user has a company
+        $statusJob = Constant::user_status_inactive; // Initial status for a job post (inactive)
+
+        if (!$company) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy công ty cho người dùng. Vui lòng kiểm tra lại thông tin công ty.',
+                'status_code' => 404
+            ], 404);
+        }
 
         // Validation rules
         $validator = Validator::make($request->all(), [
-            'jobtype_id' => 'required|exists:job_types,id',
+            'profession_id' => 'required|exists:professions,id',
+            'desired_level_id' => 'required|exists:desired_levels,id',
+            'employment_type_id' => 'required|exists:employment_types,id',
+            'experience_level_id' => 'required|exists:experience_levels,id',
+            'education_level_id' => 'required|exists:education_levels,id',
+            'country_id' => 'required|exists:countries,id',
             'city_id' => 'required|exists:cities,id',
-            'title' => 'required|string',
-            'profession' => 'required|string',
-            'position' => 'nullable|string',
-            'experience_years' => 'nullable|integer',
-            'work_address' => 'nullable|string',
-            'employment_type' => 'nullable|string',
-            'quantity' => 'nullable|integer',
-            'salary_from' => 'nullable|numeric',
-            'salary_to' => 'nullable|numeric',
-            'education_level' => 'nullable|string',
-            'last_date' => 'required|date',
-            'description' => 'required|string',
+            'district_id' => 'required|exists:districts,id',
+            'title' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:1',
+            'salary_from' => 'nullable|integer|min:0',
+            'salary_to' => 'nullable|integer|min:0|gte:salary_from',
+            'work_address' => 'required|string|max:255',
+            'last_date' => 'required|date|after:today',
+            'description' => 'nullable|string',
             'skill_experience' => 'nullable|string',
             'benefits' => 'nullable|string',
-            'city' => 'nullable|string',
-            'district' => 'nullable|string',
-            'work_location' => 'nullable|string',
+            'work_location' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'contact_name' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'email' => 'nullable|email',
-            'featured' => 'required|integer',
-            'job_skills' => 'required|array',
-            'job_skills.*.name' => 'required|string',
-        ]);
-
-        // Custom error messages
-        $messages = [
-            'jobtype_id.required' => 'Trường loại công việc là bắt buộc.',
-            'jobtype_id.exists' => 'Loại công việc không tồn tại.',
-            'city_id.required' => 'Trường thành phố là bắt buộc.',
+            'contact_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'required|email|max:255',
+            'featured' => 'nullable|boolean',
+        ], [
+            'profession_id.required' => 'Nghề nghiệp là bắt buộc.',
+            'profession_id.exists' => 'Nghề nghiệp không tồn tại.',
+            'desired_level_id.required' => 'Cấp độ mong muốn là bắt buộc.',
+            'employment_type_id.required' => 'Hình thức làm việc là bắt buộc.',
+            'experience_level_id.required' => 'Cấp độ kinh nghiệm là bắt buộc.',
+            'education_level_id.required' => 'Cấp độ học vấn là bắt buộc.',
+            'country_id.required' => 'Quốc gia là bắt buộc.',
+            'city_id.required' => 'Thành phố là bắt buộc.',
             'city_id.exists' => 'Thành phố không tồn tại.',
+            'district_id.required' => 'Quận/huyện là bắt buộc.',
+            'district_id.exists' => 'Quận/huyện không tồn tại.',
             'title.required' => 'Tiêu đề là bắt buộc.',
-            'profession.required' => 'Nghề nghiệp là bắt buộc.',
+            'quantity.required' => 'Số lượng là bắt buộc.',
+            'quantity.integer' => 'Số lượng phải là số nguyên.',
+            'salary_from.integer' => 'Mức lương từ phải là số nguyên.',
+            'salary_to.integer' => 'Mức lương đến phải là số nguyên.',
+            'salary_to.gte' => 'Mức lương đến phải lớn hơn hoặc bằng mức lương từ.',
+            'work_address.required' => 'Địa chỉ làm việc là bắt buộc.',
             'last_date.required' => 'Ngày hết hạn là bắt buộc.',
-            'description.required' => 'Mô tả là bắt buộc.',
-            'job_skills.required' => 'Kỹ năng công việc là bắt buộc.',
-            'job_skills.array' => 'Kỹ năng công việc phải là một mảng.',
-            'job_skills.*.name.required' => 'Tên kỹ năng là bắt buộc.',
+            'last_date.after' => 'Ngày hết hạn phải sau hôm nay.',
+            'contact_name.required' => 'Tên liên hệ là bắt buộc.',
+            'phone.required' => 'Số điện thoại là bắt buộc.',
+            'phone.max' => 'Số điện thoại không được quá 15 ký tự.',
+            'email.required' => 'Email là bắt buộc.',
             'email.email' => 'Địa chỉ email không hợp lệ.',
-        ];
-
-        $validator->setCustomMessages($messages);
+            'featured.boolean' => 'Trường này phải là true hoặc false.',
+        ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi xác thực',
+                'message' => 'Lỗi xác thực dữ liệu, vui lòng kiểm tra lại.',
                 'errors' => $validator->errors(),
                 'status_code' => 400
             ], 400);
         }
 
+        // Save the job in the database
         $validatedData = $validator->validated();
-
-        // Add users_id and company_id to the validated data array.
         $validatedData['users_id'] = $user->id;
         $validatedData['company_id'] = $company;
-        $validatedData['status'] = $statusJob;
+        $validatedData['status'] = $statusJob; // Job is initially inactive
 
+        $job = Job::create($validatedData); // Assuming you have a Job model
 
-        if (!$company) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy công ty cho người dùng.',
-            ], 404);
-        }
-
-        // Extract job skills data from the request and remove it from the validated data
-        $jobSkillsData = $validatedData['job_skills'];
-        unset($validatedData['job_skills']);
-
-        try {
-            \DB::beginTransaction();
-            $job = Job::create($validatedData);
-
-            foreach ($jobSkillsData as $skillData) {
-                $job->jobSkills()->create($skillData);
-            }
-
-            \DB::commit();
-
-            $jobData = [
-                'id' => $job->id,
+        // Custom response after successful job creation
+        return response()->json([
+            'success' => true,
+            'message' => 'Công việc đã được khởi tạo thành công. Vui lòng đợi người kiểm duyệt xác nhận trước khi hiển thị công khai.',
+            'data' => [
+                'job_id' => $job->id,
                 'title' => $job->title,
-                'profession' => $job->profession,
-                'position' => $job->position,
-                'experience_years' => $job->experience_years,
-                'work_address' => $job->work_address,
-                'employment_type' => $job->employment_type,
-                'quantity' => $job->quantity,
-                'salary_from' => $job->salary_from,
-                'salary_to' => $job->salary_to,
-                'education_level' => $job->education_level,
-                'status' => 'inactive',
-                'featured' => $job->featured ? 'active' : 'inactive',
+                'featured' => $statusText = ($job->featured == 1) ? 'Tuyển gấp' : (($job->featured == 0) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
+                'created_at' => $job->created_at->format('Y-m-d H:i:s'),
                 'last_date' => $job->last_date,
-                'description' => $job->description,
-                'skill_experience' => $job->skill_experience,
-                'benefits' => $job->benefits,
-                'city' => $job->city,
-                'district' => $job->district,
-                'work_location' => $job->work_location,
-                'latitude' => $job->latitude,
-                'longitude' => $job->longitude,
-                'contact_name' => $job->contact_name,
-                'phone' => $job->phone,
-                'email' => $job->email,
-                'job_skills' => $job->jobSkills->pluck('name')->toArray(),
-            ];
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Công việc đã được khởi tạo, vui lòng chờ người kiểm duyệt xác minh.',
-                'data' => $jobData,
-                'status_code' => 200
-            ]);
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error($e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Tạo công việc không thành công.',
-            ], 500);
-        }
+                'view'
+                'status' => $statusText = ($job->status == 3) ? 'Đã duyệt' : (($job->status == 4) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
+            ],
+            'status_code' => 201
+        ], 201);
     }
+
 
     /**
      * Display the specified resource.
      */
-//    public function show(Job $job)
-//    {
-//        // Lấy các công việc đề xuất
-//        $jobRecommendation = $this->jobRecommend($job);
-//
-//        // Tạo một mảng dữ liệu chứa thông tin về công việc và đề xuất công việc
-//        $responseData = [
-//            'job' => $job,
-//            'job_recommendation' => $jobRecommendation,
-//        ];
-//
-//        // Trả về dữ liệu dưới dạng JSON
-//        return response()->json([
-//            'success' => true,
-//            'message' => 'success',
-//            'data' => $responseData,
-//        ]);
-//    }
+
 
     public function show(Job $job)
     {

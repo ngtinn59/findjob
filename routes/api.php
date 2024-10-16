@@ -173,7 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware(CheckUserRole::class)->group(function () {
-        Route::resource('jobs', JobsController::class);
+        Route::resource('employer/jobs', JobsController::class);
         Route::get('/jobs/suggest-jobs', [JobsController::class, 'searchForEmployer']);
 
         Route::post('/process_application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
@@ -186,6 +186,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('employer/candidates/save/{id}', [CandidatesController::class, 'saveCandidate']);
         Route::delete('employer/candidates/un-save/{id}', [CandidatesController::class, 'unsaveCandidate']);
+        Route::get('employer/candidates/saved', [CandidatesController::class, 'index']);
+        Route::get('employer/saved-candidates/{id}', [CandidatesController::class, 'show']);
+
 
     });
 
