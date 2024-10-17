@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             DesiredLevelsTableSeeder::class,
             ExperienceLevelsSeeder::class,
             LanguagesTableSeeder::class,
+            WorkplaceSeeder::class
         ]);
     }
 }

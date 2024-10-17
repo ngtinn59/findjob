@@ -23,6 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('district_id')->nullable();
             $table->unsignedBigInteger('country_id')->nullable();
+            $table->unsignedBigInteger('workplace_id')->nullable();
 
             $table->text('title')->nullable();
             $table->integer('quantity')->nullable();
@@ -55,6 +56,7 @@ return new class extends Migration
             $table->foreign('district_id')->references('id')->on('districts')->onDelete('set null');
             $table->foreign('country_id')->references('id')->on('countries')->onDelete('set null');
             $table->foreign('desired_level_id')->references('id')->on('desired_levels')->onDelete('set null');
+            $table->foreign('workplace_id')->references('id')->on('workplaces')->onDelete('set null');
 
             $table->timestamps();
         });

@@ -15,10 +15,12 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     EducationLevelsController,
     EmploymentTypesController,
     ExperienceLevelsController,
+    JobtypesController,
     JobtypesControllerController,
     CompaniesController as AdminCompaniesController,
     LanguagesController,
-    ProfessionsController};
+    ProfessionsController,
+    WorkplacesController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
     CompaniesSkillsController,
@@ -80,7 +82,6 @@ Route::get('/email/verify', function (Request $request) {
 // Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
-Route::get('/job-types', [JobtypesControllerController::class, 'index']);
 Route::get('/company-types', [CompanytypesController::class, 'index']);
 Route::get('/company-sizes', [CompanysizesController::class, 'index']);
 
@@ -92,9 +93,6 @@ Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistricts
 
 // User Jobs
 
-Route::get('/list-jobs', [JobsController::class, 'indexShow']);
-Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
-Route::get('/search', [JobsController::class, 'search']);
 Route::get('/companies1', [CompaniesController::class, 'indexShow']);
 Route::get('/companies1/{company}', [CompaniesController::class, 'show']);
 
@@ -111,11 +109,7 @@ Route::delete('logout', [AuthController::class, 'logout']);
 
 
 //User Jobs
-Route::get('/list-jobs', [JobsController::class, 'indexShow']);
-Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
-Route::get('/search', [JobsController::class, 'search']);
-Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
-Route::get('/list-companies/{company}', [CompaniesController::class, 'show']);
+
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -132,6 +126,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::resource('company/skills', CompaniesSkillsController::class);
 
+
+    Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+    Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
+    Route::get('/jobs/search', [JobsController::class, 'search']);
+    Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
+    Route::get('/list-companies/{company}', [CompaniesController::class, 'show']);
     // Profile Routes
     Route::resource('profile', ProfilesController::class);
 
@@ -174,7 +174,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(CheckUserRole::class)->group(function () {
         Route::resource('employer/jobs', JobsController::class);
-        Route::get('/jobs/suggest-jobs', [JobsController::class, 'searchForEmployer']);
 
         Route::post('/process_application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
@@ -193,7 +192,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
-        Route::resource('/job-types', JobtypesControllerController::class);
+        Route::resource('/workplaces', WorkplacesController::class);
 
         Route::resource('/countries', CountriesController::class);
         Route::resource('/cities', CitiesController::class);
