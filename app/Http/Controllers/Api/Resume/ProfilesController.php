@@ -24,15 +24,18 @@ class ProfilesController extends Controller
         $profile = Profile::where("users_id", $user->id)->get();
         $profilesData = $profile->map(function ($profile) {
             return [
-                'title' => $profile->title,
+                'users_id' => $profile->users_id,
+                'id' => $profile->id,
                 'name' => $profile->name,
                 'phone' => $profile->phone,
                 'email' => $profile->email,
                 'birthday' => $profile->birthday,
-                'image_url' => url('uploads/images/' . $profile->image), // Xây dựng URL của hình ảnh
-                'gender' => $profile->gender == 1 ? 'Male' : 'Female',
-                'location' => $profile->location,
-                'website' => $profile->website,
+                'gender' => $profile->gender == 1 ? 'Nam' : 'Nữ',
+                'address' => $profile->address,
+                'country_name' => $profile->country->name, // Lấy tên quốc gia
+                'city_name' => $profile->city->name, // Lấy tên thành phố
+                'district_name' => $profile->district->name ?? null,
+                'image_url' => url('uploads/images/' . $profile->image),
             ];
         });
 
@@ -59,18 +62,27 @@ class ProfilesController extends Controller
                 'name' => 'required',
                 'title' => 'required',
                 'phone' => 'required',
-                'email' => 'required',
-                'birthday' => 'required',
-                'location' => 'required',
-                'website' => 'required',
+                'email' => 'required|email', // Thêm xác thực email nếu cần
+                'birthday' => 'required|date', // Thêm xác thực định dạng ngày nếu cần
+                'address' => 'required',
+                'country_id' => 'required|exists:countries,id', // Kiểm tra xem country_id có tồn tại không
+                'city_id' => 'required|exists:cities,id', // Kiểm tra xem city_id có tồn tại không
+                'district_id' => 'required|exists:districts,id', // Kiểm tra xem district_id có tồn tại không
             ], [
                 'name.required' => 'Tên là bắt buộc.',
-                'title.required' => 'Chức danh là bắt buộc.',
+                'title.required' => 'Chức vụ là bắt buộc.',
                 'phone.required' => 'Số điện thoại là bắt buộc.',
-                'email.required' => 'Email là bắt buộc.',
+                'email.required' => 'Địa chỉ email là bắt buộc.',
+                'email.email' => 'Địa chỉ email không hợp lệ.',
                 'birthday.required' => 'Ngày sinh là bắt buộc.',
-                'location.required' => 'Địa điểm là bắt buộc.',
-                'website.required' => 'Website là bắt buộc.',
+                'birthday.date' => 'Ngày sinh không hợp lệ.',
+                'address.required' => 'Địa chỉ là bắt buộc.',
+                'country_id.required' => 'ID quốc gia là bắt buộc.',
+                'country_id.exists' => 'ID quốc gia không tồn tại.',
+                'city_id.required' => 'ID thành phố là bắt buộc.',
+                'city_id.exists' => 'ID thành phố không tồn tại.',
+                'district_id.required' => 'ID quận huyện là bắt buộc.',
+                'district_id.exists' => 'ID quận huyện không tồn tại.',
             ]);
 
             if ($validator->fails()) {
@@ -80,6 +92,7 @@ class ProfilesController extends Controller
                     'errors' => $validator->errors(),
                 ], 400);
             }
+
 
             // Upload file ảnh và xử lý
             $file = $request->file('image');
@@ -94,8 +107,11 @@ class ProfilesController extends Controller
                 'email' => $request->input('email'),
                 'birthday' => $request->input('birthday'),
                 'gender' => $request->input('gender'),
-                'location' => $request->input('location'),
-                'website' => $request->input('website'),
+                'address' => $request->input('address'),
+                'country_id' => $request->input('country_id'),
+                'city_id' => $request->input('city_id'),
+                'district_id' => $request->input('district_id'),
+
                 'image' => $file_name,
                 'users_id' => auth()->user()->id,
             ];
@@ -124,13 +140,15 @@ class ProfilesController extends Controller
             }
 
             $profile->name = $request->input('name', $profile->name);
-            $profile->title = $request->input('title', $profile->title);
             $profile->phone = $request->input('phone', $profile->phone);
             $profile->email = $request->input('email', $profile->email);
             $profile->birthday = $request->input('birthday', $profile->birthday);
             $profile->gender = $request->input('gender', $profile->gender);
-            $profile->location = $request->input('location', $profile->location);
-            $profile->website = $request->input('website', $profile->website);
+            $profile->address = $request->input('address', $profile->address);
+            $profile->country_id = $request->input('country_id', $profile->country_id);
+            $profile->city_id = $request->input('city_id', $profile->city_id);
+            $profile->district_id = $request->input('district_id', $profile->district_id);
+
             $profile->users_id = auth()->user()->id;
             $profile->save();
 
@@ -138,15 +156,17 @@ class ProfilesController extends Controller
                 'users_id' => $profile->users_id,
                 'id' => $profile->id,
                 'name' => $profile->name,
-                'title' => $profile->title,
                 'phone' => $profile->phone,
                 'email' => $profile->email,
                 'birthday' => $profile->birthday,
                 'gender' => $profile->gender == 1 ? 'Nam' : 'Nữ',
-                'location' => $profile->location,
-                'website' => $profile->website,
+                'address' => $profile->address,
+                'country_name' => $profile->country->name, // Lấy tên quốc gia
+                'city_name' => $profile->city->name, // Lấy tên thành phố
+                'district_name' => $profile->district->name ?? null,
                 'image_url' => url('uploads/images/' . $profile->image),
             ];
+
         }
 
         return response()->json([

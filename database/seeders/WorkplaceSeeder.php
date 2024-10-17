@@ -2,24 +2,25 @@
 
 namespace Database\Seeders;
 
+use App\Models\Workplace;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
-class JobtypeTableSeeder extends Seeder
+class WorkplaceSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $jobtype = [
+        $workplaces = [
             ['name' => 'Làm từ xa'],
             ['name' => 'Tại văn phòng'],
             ['name' => 'Kết hợp'],
         ];
 
-        DB::table('job_types')->insert($jobtype);
+        foreach ($workplaces as $workplace) {
+            Workplace::create($workplace);
+        }
     }
-
 }

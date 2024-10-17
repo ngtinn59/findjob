@@ -42,15 +42,21 @@ class CompaniesController extends Controller
                 'city' => $city,
                 'companyType' => $companyType,
                 'companySize' => $companySize,
-                'name' => $company->name,
-                'Working_days' => $company->Working_days,
-                'Overtime_policy' => $company->Overtime_policy,
-                'webstie' => $company->webstie,
-                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+                'name' => $company->company_name,
+                'phone' => $company->phone, // Thêm số điện thoại
+                'company_email' => $company->company_email, // Thêm email công ty
+                'working_days' => $company->working_days,
+                'overtime_policy' => $company->overtime_policy,
+                'website' => $company->website, // Sửa đúng tên trường từ 'webstie' thành 'website'
+                'logo' => asset('uploads/images/' . $company->logo),
                 'facebook' => $company->facebook,
+                'tax_code' => $company->tax_code,
+                'date_of_establishment' => $company->date_of_establishment,
+                'banner' => $company->banner,
                 'address' => $company->address,
                 'description' => $company->description,
             ];
+
         });
 
         return response()->json([
@@ -86,9 +92,12 @@ class CompaniesController extends Controller
         }
 
         $data = $request->only([
-            'company_size_id', 'company_type_id', 'name', 'Working_days',
-            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description', 'address','banner'
+            'company_size_id', 'company_type_id', 'company_name', 'working_days',
+            'overtime_policy', 'website', 'logo', 'facebook', 'description',
+            'address', 'banner', 'phone', 'company_email', 'tax_code',
+            'date_of_establishment',
         ]);
+
 
         // Upload logo
         $file = $request->file('logo');
@@ -117,27 +126,32 @@ class CompaniesController extends Controller
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
 
-        $comapyData = [
+        $companyData = [
             'id' => $company->id,
             'country' => $country,
             'city' => $city,
             'companyType' => $companyType,
             'companySize' => $companySize,
-            'name' => $company->name,
-            'Working_days' => $company->Working_days,
-            'Overtime_policy' => $company->Overtime_policy,
-            'webstie' => $company->webstie,
-            'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
-            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
+            'name' => $company->company_name, // Sử dụng 'company_name' thay vì 'name'
+            'working_days' => $company->working_days, // Chỉnh từ 'Working_days' thành 'working_days'
+            'overtime_policy' => $company->overtime_policy, // Chỉnh từ 'Overtime_policy' thành 'overtime_policy'
+            'website' => $company->website, // Chỉnh từ 'webstie' thành 'website'
+            'logo' => asset('uploads/images/' . $company->logo), // Đường dẫn đầy đủ tới logo
+            'banner' => asset('uploads/images/' . $company->banner), // Đường dẫn đầy đủ tới banner
             'facebook' => $company->facebook,
             'address' => $company->address,
             'description' => $company->description,
+            'phone' => $company->phone, // Thêm số điện thoại nếu có trong schema
+            'company_email' => $company->company_email, // Thêm email công ty
+            'tax_code' => $company->tax_code, // Thêm mã số thuế
+            'date_of_establishment' => $company->date_of_establishment, // Thêm ngày thành lập
         ];
+
 
         return response()->json([
             'success'   => true,
             'message'   => "success update",
-            "data" => $comapyData,
+            "data" => $companyData,
             'status_code'    => 200
         ]);
     }
