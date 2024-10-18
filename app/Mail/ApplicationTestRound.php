@@ -14,13 +14,16 @@ class ApplicationTestRound extends Mailable
     use Queueable, SerializesModels;
     public $job;
     public $name;
+    public $email;
     /**
      * Create a new message instance.
      */
-    public function __construct($job, $name)
+    public function __construct($job, $name , $email)
     {
         $this->job = $job;
         $this->name = $name;
+        $this->email = $email;
+
     }
 
     /**
@@ -30,15 +33,15 @@ class ApplicationTestRound extends Mailable
     public function build()
     {
         // Lấy tên công ty từ công việc liên quan
-        $companyName = $this->job->company->company_name ?? 'Company';  // Nếu không có, sử dụng giá trị mặc định 'Company'
-
+        $companyName = $this->job->Company->company_name ?? 'Company';  // Nếu không có, sử dụng giá trị mặc định 'Company'
         return $this->from('ngtin590@gmail.com', $companyName)
             ->subject('Cập Nhật Trạng Thái Đơn Xin Việc')
             ->view('emails.application_test_round')
             ->with([
                 'jobTitle' => $this->job->title,
                 'applicantName' => $this->name,   // Lấy tên từ bảng pivot
-                'applicantEmail' => $this->email, // Lấy email từ bảng pivot
+                'applicantEmail' => $this->email,
+                'companyName' => $companyName
             ]);
     }
 

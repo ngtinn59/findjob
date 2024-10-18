@@ -12,7 +12,7 @@ class ApplicationApproved extends Mailable
 
     public $job;
     public $name;
-    public $email;
+    public $status;
 
 
     /**
@@ -22,13 +22,11 @@ class ApplicationApproved extends Mailable
      * @param  mixed  $name
      * @param mixed $email
  */
-    public function __construct($job, $name,$email)
+    public function __construct($job, $name, $status)
     {
-        // Truyền dữ liệu công việc và ứng viên vào mail class
         $this->job = $job;
         $this->name = $name;
-        $this->email = $email;
-
+        $this->status = $status;
     }
 
     /**
@@ -38,16 +36,14 @@ class ApplicationApproved extends Mailable
      */
     public function build()
     {
-        // Lấy tên công ty từ công việc liên quan
-        $companyName = $this->job->company->company_name ?? 'Company';  // Nếu không có, sử dụng giá trị mặc định 'Company'
-
-        return $this->from('ngtin590@gmail.com', $companyName)
-            ->subject('Cập nhật trạng thái công việc  - ' . $this->job->title)
-            ->view('emails.application_approved')
+        return $this->from('ngtin590@gmail.com', $this->job->Company->company_name ?? 'Company')
+            ->subject('Cập nhật trạng thái ứng tuyển: ' . $this->job->title)
+            ->view('emails.application_status_update')
             ->with([
                 'jobTitle' => $this->job->title,
-                'applicantName' => $this->name,   // Lấy tên từ bảng pivot
-                'applicantEmail' => $this->email, // Lấy email từ bảng pivot
+                'applicantName' => $this->name,
+                'status' => $this->status,
+                'companyName' => $this->job->Company->company_name
             ]);
     }
 }

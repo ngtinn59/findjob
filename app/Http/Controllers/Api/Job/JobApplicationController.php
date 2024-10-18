@@ -226,19 +226,10 @@ class   JobApplicationController extends Controller
 
         // Update the status of the application in the pivot table
         $job->users()->updateExistingPivot($userId, ['status' => $status]);
+        Mail::to($email)->send(new ApplicationApproved($job, $name, $status));
 
-        // Send notification email to the applicant
-        if ($status === 'hired') {
-            Mail::to($email)->send(new ApplicationApproved($job, $name, $email));
-        } elseif ($status === 'not_selected') {
-            Mail::to($applicant->pivot->email)->send(new ApplicationRejected($job, $applicant->pivot->name));
-        } elseif ($status === 'contacted') {
-            Mail::to($applicant->pivot->email)->send(new ApplicationContacted($job, $applicant->pivot->name));
-        } elseif ($status === 'test_round') {
-            Mail::to($applicant->pivot->email)->send(new ApplicationTestRound($job, $applicant->pivot->name));
-        } elseif ($status === 'interview') {
-            Mail::to($applicant->pivot->email)->send(new ApplicationInterview($job, $applicant->pivot->name));
-        }
+
+
 
         // Fetch updated job data
         $job = Job::with(['applicants' => function ($query) {
