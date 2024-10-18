@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Từ Chối Đơn Xin Việc</title>
+    <title>Cập Nhật Trạng Thái Đơn Xin Việc</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,7 +25,7 @@
             color: #2c3e50;
             font-size: 24px;
             margin-bottom: 20px;
-            border-bottom: 2px solid #e74c3c;
+            border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
         p {
@@ -33,7 +33,7 @@
             margin-bottom: 15px;
         }
         strong {
-            color: #c0392b;
+            color: #2980b9;
         }
         .footer {
             margin-top: 30px;
@@ -47,40 +47,26 @@
             margin-top: 25px;
             font-style: italic;
         }
-        .message-box {
-            background-color: #fdf2f0;
-            border-left: 4px solid #e74c3c;
+        .interview-details {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3498db;
             padding: 15px;
             margin-bottom: 20px;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #3498db;
-            color: #ffffff;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .cta-button:hover {
-            background-color: #2980b9;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Chào {{ $applicantName }},</h1>
-    <div class="message-box">
-        <p>Chúng tôi rất tiếc phải thông báo rằng đơn xin việc của bạn cho vị trí <strong>{{ $jobTitle }}</strong> tại <strong>{{ $companyName }}</strong> đã không được chấp nhận.</p>
+    <h1>Cập Nhật Trạng Thái Đơn Xin Việc</h1>
+    <p>Chào {{ $applicantName }},</p>
+
+    <p>Chúng tôi xin thông báo rằng hồ sơ của bạn đã được xem xét và bạn đã được mời tham gia phỏng vấn cho vị trí <strong>{{ $jobTitle }}</strong> tại <strong>{{ $companyName }}</strong>.</p>
+
+    <div class="interview-details">
+        <p>Chúng tôi sẽ sớm liên hệ với bạn để cung cấp thông tin chi tiết về thời gian, địa điểm và hình thức phỏng vấn.</p>
     </div>
 
-    <p>Chúng tôi rất trân trọng thời gian và công sức bạn đã dành cho việc ứng tuyển này. Mặc dù bạn không được chọn cho vị trí này, chúng tôi khuyến khích bạn tiếp tục theo dõi các cơ hội việc làm khác tại công ty của chúng tôi trong tương lai.</p>
-
-    <p>Cảm ơn bạn đã quan tâm đến cơ hội làm việc với chúng tôi!</p>
-
-    <a href="#" class="cta-button">Xem Cơ Hội Khác</a>
-
+    <p>Chúng tôi rất mong chờ được gặp bạn và chúc bạn thành công trong buổi phỏng vấn!</p>
     <p class="signature">Trân trọng,<br>{{ $companyName }}</p>
 </div>
 <div class="footer">

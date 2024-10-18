@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Objective;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CandidatesController extends Controller
 {
@@ -170,6 +171,65 @@ class CandidatesController extends Controller
             'message' => 'Chi tiết hồ sơ ứng viên',
             'data' => $candidateData,
             'status_code' => 200
+        ]);
+    }
+
+    public function apply(Request $request, $id)
+    {
+        $job = Job::find($id);
+        if (!$job) {
+            return response()->json(['message' => 'Công việc không tồn tại.'], 404);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if ($job->users()->where('users.id', $user->id)->exists()) {
+            return response()->json([
+                'message' => 'Bạn đã ứng tuyển công việc này rồi.',
+                'status_code' => 409
+            ], 409);
+        }
+
+        // Kiểm tra xem người dùng đã chọn CV có sẵn hay upload CV mới
+        if ($request->has('selected_cv_id')) {
+            // Người dùng chọn một CV có sẵn
+            $selectedCv = Cv::find($request->selected_cv_id);
+            if (!$selectedCv || $selectedCv->users_id != $user->id) {
+                return response()->json(['message' => 'CV không hợp lệ.'], 400);
+            }
+            $cvFileName = $selectedCv->file_path;
+        } elseif ($request->hasFile('cv')) {
+            // Người dùng tải lên CV mới
+            $cv = $request->file('cv');
+            $cvFileName = time() . '_' . $cv->getClientOriginalName();
+            $cv->storeAs('public/cv', $cvFileName);
+        } else {
+            // Không có CV nào được chọn hoặc tải lên
+            return response()->json(['message' => 'Vui lòng chọn hoặc tải lên CV.'], 400);
+        }
+
+        // Tiếp tục quá trình ứng tuyển
+        Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
+        $job->users()->attach($user->id, ['status' => 'pending', 'cv' => $cvFileName]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ứng tuyển công việc thành công.',
+            'status_code' => 200,
+        ], 200);
+    }
+
+    public function getUserCvs(Request $request)
+    {
+        $user = $request->user();
+        $cvs = $user->cvs; // Giả sử người dùng có mối quan hệ hasMany với CVs
+
+        return response()->json([
+            'success' => true,
+            'cvs' => $cvs
         ]);
     }
 

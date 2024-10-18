@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Từ Chối Đơn Xin Việc</title>
+    <title>Bạn sẽ sớm được liên hệ</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,7 +25,7 @@
             color: #2c3e50;
             font-size: 24px;
             margin-bottom: 20px;
-            border-bottom: 2px solid #e74c3c;
+            border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
         p {
@@ -33,7 +33,7 @@
             margin-bottom: 15px;
         }
         strong {
-            color: #c0392b;
+            color: #2980b9;
         }
         .footer {
             margin-top: 30px;
@@ -47,9 +47,9 @@
             margin-top: 25px;
             font-style: italic;
         }
-        .message-box {
-            background-color: #fdf2f0;
-            border-left: 4px solid #e74c3c;
+        .highlight-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3498db;
             padding: 15px;
             margin-bottom: 20px;
         }
@@ -71,15 +71,19 @@
 <body>
 <div class="container">
     <h1>Chào {{ $applicantName }},</h1>
-    <div class="message-box">
-        <p>Chúng tôi rất tiếc phải thông báo rằng đơn xin việc của bạn cho vị trí <strong>{{ $jobTitle }}</strong> tại <strong>{{ $companyName }}</strong> đã không được chấp nhận.</p>
+    <p>Cảm ơn bạn đã nộp đơn ứng tuyển cho vị trí <strong>{{ $jobTitle }}</strong> tại <strong>{{ $companyName }}</strong>.</p>
+
+    <div class="highlight-box">
+        <p>Chúng tôi muốn thông báo rằng hồ sơ của bạn đang được xem xét và bạn sẽ sớm nhận được thông tin từ chúng tôi về các bước tiếp theo trong quá trình ứng tuyển.</p>
     </div>
 
-    <p>Chúng tôi rất trân trọng thời gian và công sức bạn đã dành cho việc ứng tuyển này. Mặc dù bạn không được chọn cho vị trí này, chúng tôi khuyến khích bạn tiếp tục theo dõi các cơ hội việc làm khác tại công ty của chúng tôi trong tương lai.</p>
+    <p>Vui lòng kiểm tra hộp thư của bạn thường xuyên để không bỏ lỡ thông tin quan trọng từ chúng tôi.</p>
+
+    <p>Nếu bạn có bất kỳ câu hỏi nào, đừng ngần ngại liên hệ với chúng tôi qua email này.</p>
 
     <p>Cảm ơn bạn đã quan tâm đến cơ hội làm việc với chúng tôi!</p>
 
-    <a href="#" class="cta-button">Xem Cơ Hội Khác</a>
+    <a href="#" class="cta-button">Xem Trạng Thái Ứng Tuyển</a>
 
     <p class="signature">Trân trọng,<br>{{ $companyName }}</p>
 </div>

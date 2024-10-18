@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Candidates\JobSeekersController;
 use App\Http\Controllers\Api\Employer\CandidatesController;
+use App\Http\Controllers\Api\Employer\EmployerMailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\{AdminController,
     AdminJobController,
@@ -15,8 +17,6 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     EducationLevelsController,
     EmploymentTypesController,
     ExperienceLevelsController,
-    JobtypesController,
-    JobtypesControllerController,
     CompaniesController as AdminCompaniesController,
     LanguagesController,
     ProfessionsController,
@@ -164,18 +164,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Job Application and Favorites
     Route::prefix('jobs')->group(function () {
-        Route::post('/{id}/apply', [JobsController::class, 'apply']);
+        Route::post('/{id}/apply', [JobSeekersController::class, 'apply']);
+        Route::get('/user/cvs', [JobSeekersController::class, 'getUserCvs']);
+
         Route::get('/applied', [JobsController::class, 'applicant']);
-        Route::post('/favorites/{id}/save', [JobsController::class, 'saveJob']);
-        Route::post('/favorites/{id}/unsave', [JobsController::class, 'unsaveJob']);
-        Route::get('/favorites/saved', [JobsController::class, 'savedJobs']);
+        Route::post('/favorites/{id}/save', [JobSeekersController::class, 'saveJob']);
+        Route::post('/favorites/{id}/un-save', [JobSeekersController::class, 'unsaveJob']);
+        Route::get('/favorites/saved', [JobSeekersController::class, 'savedJobs']);
         Route::get('/suggest', [JobsController::class, 'suggestJobs']);
     });
 
     Route::middleware(CheckUserRole::class)->group(function () {
         Route::resource('employer/jobs', JobsController::class);
+        Route::get('employer/companies/notifications', [JobsController::class, 'getNotifications']);
+        Route::post('employer/companies/notifications/read', [JobsController::class, 'markAsRead']);
 
-        Route::post('/process_application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
+        Route::post('/jobs/{jobId}/applicants/{userId}/send-email', [EmployerMailController::class, 'sendEmailToApplicant']);
+
+        Route::post('/process-application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
         Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);

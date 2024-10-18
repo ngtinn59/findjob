@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Companies;
 
 use App\Http\Controllers\Controller;
 use App\Mail\JobApplied;
+use App\Models\Company;
 use App\Models\Job;
 use App\Utillities\Constant;
 use Auth;
@@ -422,8 +423,8 @@ class JobsController extends Controller
                 'title' => $relatedJob['job']->title,
                 'city' => $relatedJob['job']->city->name,
                 'company' => $relatedJob['job']->company->company_name,
-                'created_at' => $relatedJob['job']->created_at->format('Y-m-d'),
-                'score' => $relatedJob['score'],  // Hiển thị điểm số
+                'last_date' =>$relatedJob['job']->last_date,
+                'score' => $relatedJob['score'],
             ];
         });
 
@@ -565,7 +566,7 @@ class JobsController extends Controller
                             'salary_to' => $job->salary_to
                         ],
                         'city' => $job->city->name,
-                        'created_at' => \Carbon\Carbon::parse($job->created_at)->format('Y-m-d'),
+                        'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
                     ];
                 }),
                 'suggested_jobs' => $suggestedJobs,
@@ -642,9 +643,90 @@ class JobsController extends Controller
                     'salary_to' => $job->salary_to
                 ],
                 'city' => $job->city->name,
-                'created_at' => \Carbon\Carbon::parse($job->created_at)->format('Y-m-d'),
+                'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
             ];
         });
     }
+
+    public function getNotifications()
+    {
+        $user = auth()->user();
+        $companyId =  $user->companies->id;
+        // Tìm công ty dựa trên ID
+        $company = Company::find($companyId);
+        if (!$company) {
+            return response()->json(['message' => 'Công ty không tồn tại.'], 404);
+        }
+
+        // Lấy tất cả thông báo cho công ty
+        $notifications = $company->notifications; // Hoặc sử dụng phương thức `notifications` nếu có
+
+        // Nếu không có thông báo nào
+        if ($notifications->isEmpty()) {
+            return response()->json(['message' => 'Không có thông báo nào.'], 204);
+        }
+
+        $customData = $notifications->map(function ($notification) {
+            return [
+                'job_id' => $notification->data['job_id'],
+                'job_title' => $notification->data['job_title'],
+                'user_id' => $notification->data['user_id'],
+                'user_name' => $notification->data['user_name'],
+                'applicant_name' => $notification->data['applicant_name'],
+                'applicant_phone' => $notification->data['applicant_phone'],
+                'applicant_email' => $notification->data['applicant_email'],
+
+                'notification_id' => $notification->id,
+                'read_at' => $notification->read_at,
+                'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy thông báo thành công',
+            'data' => $customData,
+            'status_code' => 200
+        ]);
+    }
+
+
+    public function markAsRead(Request $request)
+    {
+        $user = auth()->user();
+        $companyId =  $user->companies->id;
+
+        // Tìm công ty dựa trên ID
+        $company = Company::find($companyId);
+        if (!$company) {
+            return response()->json(['message' => 'Công ty không tồn tại.'], 404);
+        }
+
+        // Lấy thông báo cụ thể nếu có ID được gửi lên
+        $notificationId = $request->input('notification_id');
+
+        if ($notificationId) {
+            // Tìm thông báo dựa trên ID
+            $notification = $company->notifications()->where('id', $notificationId)->first();
+
+            if (!$notification) {
+                return response()->json(['message' => 'Thông báo không tồn tại.'], 404);
+            }
+
+            // Đánh dấu thông báo này là đã đọc
+            $notification->markAsRead();
+        } else {
+            // Đánh dấu tất cả thông báo là đã đọc nếu không có ID nào được gửi lên
+            $company->notifications()->whereNull('read_at')->get()->markAsRead();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đánh dấu thông báo đã đọc thành công',
+            'status_code' => 200
+        ]);
+    }
+
+
 
 }
