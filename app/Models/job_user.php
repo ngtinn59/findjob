@@ -9,4 +9,7 @@ class job_user extends Model
 {
     use HasFactory;
 
+    protected $table = 'job_user';
+    protected $primaryKey = 'id';
+    protected $guarded = [];
 }

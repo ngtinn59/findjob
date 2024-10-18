@@ -14,11 +14,12 @@ class JobtypeTableSeeder extends Seeder
     public function run(): void
     {
         $jobtype = [
-            ['name' => 'Remote'],
-            ['name' => 'At office'],
-            ['name' => 'Hybrid'],
+            ['name' => 'Làm từ xa'],
+            ['name' => 'Tại văn phòng'],
+            ['name' => 'Kết hợp'],
         ];
 
         DB::table('job_types')->insert($jobtype);
     }
+
 }

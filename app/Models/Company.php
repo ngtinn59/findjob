@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\Admin\CompanysizesController;
 use App\Http\Controllers\Api\Admin\CompanytypesController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Company extends Model
 {
     use HasFactory;
+    use Notifiable;
+
 
     protected $table = 'companies';
 
