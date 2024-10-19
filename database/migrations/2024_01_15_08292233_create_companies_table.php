@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('users_id');
             $table->foreignId('country_id')->nullable();
             $table->foreignId('city_id')->nullable();
+            $table->foreignId('district_id')->nullable();
+
             $table->foreignId('company_size_id')->nullable();
             $table->foreignId('company_type_id')->nullable();
             $table->text('company_name')->nullable();
@@ -35,6 +37,7 @@ return new class extends Migration
             $table->text('latitude')->nullable();
             $table->text('longitude')->nullable();
             $table->text('description')->nullable();
+            $table->boolean('is_hot')->default(false); // Trạng thái xác nhận, mặc định là chưa xác nhận
             $table->boolean('approved')->default(false); // Trạng thái xác nhận, mặc định là chưa xác nhận
             $table->timestamps();
         });

@@ -25,7 +25,10 @@ return new class extends Migration
                 'interview',    // Vòng phỏng vấn
                 'hired',        // Trúng tuyển
                 'not_selected'  // Không đúng tuyển
-            ])->default('pending');            $table->timestamps();
+            ])->default('pending');
+            $table->softDeletes();  // Thêm cột soft delete
+
+            $table->timestamps();
         });
     }
 

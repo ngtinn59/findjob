@@ -163,31 +163,41 @@ class CompaniesController extends Controller
      */
     public function show(Company $company)
     {
-        // Eager load the relationships to avoid N+1 problem
-        $company->load(['companytype', 'companysize', 'country', 'city']);
 
+        $company->load(['companytype', 'companysize', 'country', 'city', 'district']);
         // Use optional to avoid trying to get properties on a null object
         $companyType = optional($company->companytype)->name;
         $companySize = optional($company->companysize)->name;
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
+        $district = optional($company->district)->name;
+
 
         // Build the detailed company data
         $companyDetails = [
             'id' => $company->id,
-            'name' => $company->name,
+            'name' => $company->company_name,
             'company_type' => $companyType,
             'company_size' => $companySize,
             'country' => $country,
             'city' => $city,
-            'Working_days' => $company->Working_days,
-            'Overtime_policy' => $company->Overtime_policy,
-            'webstie' => $company->webstie,
+            'district' => $district,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => $company->date_of_establishment,
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
+            'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
+            'description' => $company->description,
             'logo' => asset('uploads/images/' . $company->logo),
             'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
-            'facebook' => $company->facebook,
-            'description' => $company->description,
-            'address' => $company->address
         ];
 
         // Return the response with the company details
@@ -331,10 +341,14 @@ class CompaniesController extends Controller
 
             return [
                 'id' => $company->id,
-                'name' => $company->name,
+                'name' => $company->company_name    ,
+                'companytype' => $companyType,
+                'companySize' => $companySize,
+
+                'logo' => asset('uploads/images/' . $company->logo),
+                'banner' => asset('uploads/images/' . $company->banner),
                 'country' => $country,
                 'city' => $city,
-                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
                 'jobs' => $job->count(),
             ];
         });
@@ -344,4 +358,101 @@ class CompaniesController extends Controller
             'data' => $companiesdata
         ], 200);
     }
+
+
+    public function detailShow(Company $company)
+    {
+        // Tải thông tin chi tiết của công ty bao gồm các quan hệ
+        $company->load(['companytype', 'companysize', 'country', 'city', 'district', 'jobs']);
+        // Sử dụng optional để tránh lỗi khi đối tượng null
+        $companyType = optional($company->companytype)->name;
+        $companySize = optional($company->companysize)->name;
+        $country = optional($company->country)->name;
+        $city = optional($company->city)->name;
+        $district = optional($company->district)->name;
+
+        // Đếm số lượng công việc của công ty
+        $jobsWithStatusActive = $company->jobs()->where('status', 3)->get()->map(function($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
+                'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                'company' => $job->company->company_name,
+                'salary' => [
+                    'salary_from' => $job->salary_from,
+                    'salary_to' => $job->salary_to
+                ],
+                'city' => $job->city->name,
+                'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
+            ];
+        });        // Tạo dữ liệu chi tiết công ty
+        $companyDetails = [
+            'id' => $company->id,
+            'name' => $company->company_name,
+            'company_type' => $companyType,
+            'company_size' => $companySize,
+            'country' => $country,
+            'city' => $city,
+            'district' => $district,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => $company->date_of_establishment,
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
+            'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
+            'description' => $company->description,
+            'is_hot' => $company->is_hot,
+            'logo' => asset('uploads/images/' . $company->logo),
+            'banner' => asset('uploads/images/' . $company->banner),
+            'jobs' => $jobsWithStatusActive,  // Danh sách các công việc có trạng thái 3
+
+        ];
+
+        // Trả về thông tin công ty và số lượng công việc
+        return response()->json([
+            'success' => true,
+            'message' => 'Company details retrieved successfully.',
+            'data' => $companyDetails
+        ], 200);
+    }
+
+    public function indexFeaturedCompanies(Request $request)
+    {
+        // Bắt đầu truy vấn, chỉ lấy các công ty có 'featured' = 1 (Nổi bật)
+        $companies = Company::where('is_hot', 1);
+
+        // Thực hiện truy vấn và phân trang kết quả
+        $results = $companies->with(['city']) // Giả sử công ty có liên quan đến thành phố
+        ->paginate(10); // Phân trang 10 công ty mỗi trang
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'featured_companies' => $results->map(function ($company) {
+                    return [
+                        'id' => $company->id,
+                        'company_name' => $company->company_name,
+                        'logo' => asset('uploads/images/' . $company->logo),
+                        'featured' => 'Công ty nổi bật', // Luôn là nổi bật do 'featured' = 1
+                        'city' => $company->city->name,  // Giả sử công ty có thuộc tính thành phố
+                        'created_at' => \Carbon\Carbon::parse($company->created_at)->format('d-m-Y'),
+                    ];
+                }),
+            ],
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+            'total' => $results->total(),
+        ]);
+    }
+
 }
+

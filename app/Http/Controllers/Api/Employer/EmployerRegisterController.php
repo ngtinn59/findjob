@@ -16,22 +16,7 @@ class EmployerRegisterController extends Controller
 {
     public function employerRegister(Request $request)
     {
-        $data = [
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => $request->input('password'),
-            'country_id' => $request->input('country_id'),
-            'city_id' => $request->input('city_id'),
-            'company_name' => $request->input('company_name'),
-            'company_email' => $request->input('company_email'),
-            'phone' => $request->input('phone'),
-            'tax_code' => $request->input('tax_code'),
-            'date_of_establishment' => $request->input('date_of_establishment'),
-            'company_size_id' => $request->input('company_size_id'),
-            'company_type_id' => $request->input('company_type_id'),
-            'website' => $request->input('website'),
-            'address' => $request->input('address')
-        ];
+
 
         $data = [
             'name' => $request->input('name'),
@@ -39,6 +24,7 @@ class EmployerRegisterController extends Controller
             'password' => $request->input('password'),
             'country_id' => $request->input('country_id'),
             'city_id' => $request->input('city_id'),
+            'district_id' => $request->input('district_id'),
             'company_name' => $request->input('company_name'),
             'company_email' => $request->input('company_email'),
             'phone' => $request->input('phone'),
@@ -56,6 +42,7 @@ class EmployerRegisterController extends Controller
             'password' => 'required|string|min:8|max:255',
             'country_id' => 'required|exists:countries,id',
             'city_id' => 'required|exists:cities,id',
+            'district_id' => 'required|exists:districts,id', // Sửa lại exists cho district_id
             'company_name' => 'required|string|max:255',
             'company_email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:15|regex:/^([0-9\s\-\+\(\)]*)$/',
@@ -77,6 +64,8 @@ class EmployerRegisterController extends Controller
             'country_id.exists' => 'Quốc gia không hợp lệ.',
             'city_id.required' => 'Vui lòng lựa chọn thành phố.',
             'city_id.exists' => 'Thành phố không hợp lệ.',
+            'district_id.required' => 'Vui lòng lựa chọn quận/huyện.',
+            'district_id.exists' => 'Quận/huyện không hợp lệ.', // Thông báo cho district_id
             'company_name.required' => 'Vui lòng nhập tên công ty.',
             'company_name.max' => 'Tên công ty không được vượt quá 255 ký tự.',
             'company_email.required' => 'Vui lòng nhập Email của công ty.',
@@ -92,6 +81,7 @@ class EmployerRegisterController extends Controller
             'address.required' => 'Vui lòng nhập địa chỉ.',
             'address.max' => 'Địa chỉ không được vượt quá 255 ký tự.',
         ]);
+
 
         if ($validator->fails()) {
             return response()->json([
@@ -129,6 +119,8 @@ class EmployerRegisterController extends Controller
                     'users_id'   => $user->id,
                     'country_id' => $validatedData['country_id'],
                     'city_id'    => $validatedData['city_id'],
+                    'district_id'    => $validatedData['district_id'],
+
                     'company_name' => $validatedData['company_name'],
                     'company_email' => $validatedData['company_email'],
                     'phone'       => $validatedData['phone'],

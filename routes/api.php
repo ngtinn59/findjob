@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\Candidates\JobSeekersController;
+use App\Http\Controllers\Api\Candidates\NotificationController;
 use App\Http\Controllers\Api\Employer\CandidatesController;
 use App\Http\Controllers\Api\Employer\EmployerMailController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Admin\{AdminController,
+use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
+    AdminController,
     AdminJobController,
     AdminStatsController,
     AdminUserController,
@@ -17,7 +19,6 @@ use App\Http\Controllers\Api\Admin\{AdminController,
     EducationLevelsController,
     EmploymentTypesController,
     ExperienceLevelsController,
-    CompaniesController as AdminCompaniesController,
     LanguagesController,
     ProfessionsController,
     WorkplacesController};
@@ -93,10 +94,9 @@ Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistricts
 
 // User Jobs
 
-Route::get('/companies1', [CompaniesController::class, 'indexShow']);
-Route::get('/companies1/{company}', [CompaniesController::class, 'show']);
 
-// Companie
+
+// Companie[
 
 // Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
@@ -104,14 +104,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::delete('logout', [AuthController::class, 'logout']);
 
-// Chat Real time
 
-
-
-//User Jobs
-
-
-// Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/download-cv', [ProfilesController::class, 'download_cv']);
     Route::post('/upload-cv', [CvsController::class, 'upload']);
@@ -124,16 +117,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('messages', [MessageController::class, 'sendMessage']);
     Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
 
-    Route::resource('company/skills', CompaniesSkillsController::class);
-
-
     Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+    Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
+
     Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
     Route::get('/jobs/search', [JobsController::class, 'search']);
     Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
-    Route::get('/list-companies/{company}', [CompaniesController::class, 'show']);
+    Route::get('/list-companies/urgent', [CompaniesController::class, 'indexFeaturedCompanies']);
+
+    Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
     // Profile Routes
     Route::resource('profile', ProfilesController::class);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
 
     Route::prefix('profiles')->group(function () {
         Route::resource('/educations', EducationController::class);
@@ -154,13 +150,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // CV Routes
     Route::resource('cvs', CvsController::class);
-
-    // Company Routes
-    Route::prefix('companies')->group(function () {
-        Route::resource('/', CompaniesController::class);
-        Route::resource('/locations', CompanyLocationsController::class);
-        Route::resource('/skills', CompaniesSkillsController::class);
-    });
 
     // Job Application and Favorites
     Route::prefix('jobs')->group(function () {
@@ -185,6 +174,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/applications', [JobApplicationController::class, 'index']);
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
         Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);
+        Route::delete('/jobs/{jobId}/applicants/{userId}', [JobApplicationController::class, 'destroy']);
 
         Route::get('resume/objectives/search', [ObjectivesController::class, 'search']);
         Route::get('resume/objectives/search-keyword', [ObjectivesController::class, 'searchByKeyword']);
@@ -193,6 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('employer/candidates/un-save/{id}', [CandidatesController::class, 'unsaveCandidate']);
         Route::get('employer/candidates/saved', [CandidatesController::class, 'index']);
         Route::get('employer/saved-candidates/{id}', [CandidatesController::class, 'show']);
+        Route::resource('employer/companies', CompaniesController::class);
 
 
     });
@@ -242,6 +233,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/desired-levels', DesiredLevelsController::class);
 
         Route::resource('/experience-levels', ExperienceLevelsController::class);
+
+        // Lấy danh sách công ty
+        Route::get('companies', [AdminCompaniesController::class, 'index']);
+
+        // Đánh dấu công ty là nổi bật
+        Route::post('companies/{companyId}/mark-as-hot', [AdminCompaniesController::class, 'markAsHot']);
 
     });
 });

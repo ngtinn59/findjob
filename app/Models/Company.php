@@ -48,11 +48,18 @@ class Company extends Model
     {
         return $this->hasOne(City::class, 'id', 'city_id');
     }
+
+    public  function district()
+    {
+        return $this->hasOne(District::class, 'id', 'district_id');
+    }
     // In your Company model
     public function jobs()  : \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Job::class,'company_id','id');
     }
+
+
 
     public function skills() {
         return  $this->hasOne(Companyskill::class,'company_id','id');

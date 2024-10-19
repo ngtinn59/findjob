@@ -7,9 +7,9 @@ use App\Mail\JobApplied;
 use App\Models\Company;
 use App\Models\Job;
 use App\Utillities\Constant;
-use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -726,6 +726,94 @@ class JobsController extends Controller
             'status_code' => 200
         ]);
     }
+
+
+    public function applicant()
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $appliedJobs = $user->jobs()->withPivot('status')->get();
+
+        $formattedJobs = $appliedJobs->map(function ($job) {
+            $company = $job->company()->first();
+            $city = $job->jobcity()->first();
+            $lastDate = Carbon::createFromFormat('Y-m-d', $job->last_date);
+            $daysRemaining = $lastDate->diffInDays(Carbon::now());
+
+            // Sử dụng status từ $statusMap
+            $statusMap = [
+                'pending'      => 'Chờ xác nhận',
+                'contacted'    => 'Đã liên hệ',
+                'test_round'   => 'Vòng test',
+                'interview'    => 'Vòng phỏng vấn',
+                'hired'        => 'Trúng tuyển',
+                'not_selected' => 'Không trúng tuyển'
+            ];
+
+            $status = $job->pivot->status;
+            $formattedStatus = isset($statusMap[$status]) ? $statusMap[$status] : 'Trạng thái không xác định'; // Nếu trạng thái không có trong map thì hiển thị thông báo
+
+            return [
+                'id' => $job->id,
+                'company' => $company ? $company->company_name : null,
+                'logo' => $company ? $company->logo : null, // Kiểm tra xem công ty có tồn tại không trước khi truy cập trường name
+                'title' => $job->title,
+                'city' => $city ? $city->name : null, // Kiểm tra xem thành phố có tồn tại không trước khi truy cập trường name
+                'salary_to' => $job->salary_to,
+                'salary_from' => $job->salary_from,
+                'status' => $formattedStatus, // Sử dụng trạng thái đã được định dạng
+                'last_date' => $job->last_date,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $formattedJobs,
+            'status_code' => 200
+        ], 200);
+    }
+
+    public function indexUrgent(Request $request)
+    {
+
+
+        $jobs = Job::where('featured', 1);
+
+
+        // Thực hiện truy vấn và phân trang kết quả
+        $results = $jobs->with(['company', 'city', 'profession'])
+            ->paginate(10); // Phân trang 10 công việc mỗi trang
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'urgent_jobs' => $results->map(function ($job) {
+                    return [
+                        'id' => $job->id,
+                        'title' => $job->title,
+                        'featured' => 'Tuyển gấp', // Luôn là tuyển gấp do 'featured' = 1
+                        'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                        'company' => $job->company->company_name,
+                        'salary' => [
+                            'salary_from' => $job->salary_from,
+                            'salary_to' => $job->salary_to
+                        ],
+                        'city' => $job->city->name,
+                        'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
+                    ];
+                }),
+            ],
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+            'total' => $results->total(),
+        ]);
+    }
+
 
 
 

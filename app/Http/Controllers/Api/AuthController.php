@@ -119,11 +119,14 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'name' => $user->name,
-            'access_token' => $token,
-            'email_verified' => $user->hasVerifiedEmail(),
+            'message' => 'Đăng nhập thành công',
+            'data' => [
+                'name' => $user->name,
+                'access_token' => $token,
+                'email_verified' => $user->hasVerifiedEmail(),
+                'token_type' => 'bearer',
+            ],
             'status_code' => 200,
-            'token_type' => 'bearer',
         ]);
     }
 

@@ -25,18 +25,20 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email'    => 'required|email|exists:users,email',
-            'password' => 'required',
-            ];
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string|min:6', // Thêm yêu cầu về độ dài mật khẩu
+        ];
     }
 
     public function messages()
     {
         return [
-            'email.required' => 'Vui lòng nhập email',
-            'email.exists' => 'Email chưa được đăng ký',
-            'password.required' => 'Vui lòng nhập khẩu',
-            'password.exists' => 'Incorrect password',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Vui lòng nhập một địa chỉ email hợp lệ.',
+            'email.exists' => 'Email chưa được đăng ký.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.string' => 'Mật khẩu phải là chuỗi ký tự.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.', // Thêm thông báo cho độ dài mật khẩu
         ];
     }
 

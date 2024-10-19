@@ -12,6 +12,8 @@ use App\Models\Job;
 use App\Models\job_user;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\ApplicationRejectedNotification;
+use App\Notifications\ApplicationStatusNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -174,10 +176,66 @@ class   JobApplicationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(job_user $job_user)
+    public function destroy($jobId, $userId)
     {
-        //
+        try {
+            // Lấy người dùng hiện tại
+            $user = Auth::user();
+
+            // Kiểm tra xem người dùng có công ty liên kết hay không
+            if (!$user->companies) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có thông tin công ty.',
+                ], 403);
+            }
+
+            // Lấy công ty đầu tiên của người dùng
+            $companyId = $user->companies->id;
+
+            // Tìm công việc dựa trên jobId và kiểm tra xem nó thuộc về công ty của người dùng
+            $job = Job::where('id', $jobId)
+                ->where('company_id', $companyId)
+                ->first();
+
+            if (!$job) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy công việc hoặc bạn không có quyền truy cập vào công việc này.',
+                ], 404);
+            }
+
+            // Tìm ứng viên trong bảng pivot với cả userId và jobId
+            $jobApplicant = $job->applicants()
+                ->where('users.id', $userId)
+                ->where('job_user.job_id', $jobId)
+                ->firstOrFail();
+            // Xóa bản ghi trong bảng pivot
+            $job->applicants()->detach($userId);
+            // Gửi thông báo cho ứng viên
+            $jobApplicant->notify(new ApplicationRejectedNotification($job));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa ứng viên khỏi công việc thành công và thông báo đã được gửi tới ứng viên.',
+                'status_code' => 200,
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy ứng viên ứng tuyển vào công việc này.',
+                'status_code' => 404,
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa ứng viên.',
+                'error' => $e->getMessage(),
+                'status_code' => 500,
+            ], 500);
+        }
     }
+
 
     public function processApplication(Request $request, $jobId, $userId)
     {
@@ -227,6 +285,7 @@ class   JobApplicationController extends Controller
         // Update the status of the application in the pivot table
         $job->users()->updateExistingPivot($userId, ['status' => $status]);
         Mail::to($email)->send(new ApplicationApproved($job, $name, $status));
+        $applicant->notify(new ApplicationStatusNotification($job, $status));
 
 
 
