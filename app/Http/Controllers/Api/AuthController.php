@@ -134,7 +134,11 @@ class AuthController extends Controller
     {
         // Xóa tất cả token của người dùng khi đăng xuất
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Logout thành công'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Đăng xuất thành công',
+            'status_code' => 200
+        ], 200);
     }
 
     public function changePassword(Request $request)
@@ -223,7 +227,7 @@ class AuthController extends Controller
         try {
             Mail::send('emails.reset-password', ['token' => $token], function ($message) use ($request) {
                 $message->to($request->email);
-                $message->subject('Reset Password Notification');
+                $message->subject('Thông báo đặt lại mật khẩu');
             });
         } catch (\Exception $e) {
             return response()->json([
@@ -273,7 +277,7 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json([
-                'error' => 'Email không tồn tạzi trong hệ thống.',
+                'error' => 'Email không tồn tại trong hệ thống.',
                 'status_code' => 404,
             ], 404);
         }

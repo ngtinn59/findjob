@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Candidates\JobSeekersController;
 use App\Http\Controllers\Api\Candidates\NotificationController;
 use App\Http\Controllers\Api\Employer\CandidatesController;
 use App\Http\Controllers\Api\Employer\EmployerMailController;
+use App\Http\Controllers\PublicDataController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
     AdminController,
@@ -85,18 +86,18 @@ Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/company-types', [CompanytypesController::class, 'index']);
 Route::get('/company-sizes', [CompanysizesController::class, 'index']);
-
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::resource('/districts', DistrictsController::class);
 Route::get('countries/{country}/cities', [CitiesController::class, 'getCitiesByCountry']);
 Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
+Route::get('languages', [PublicDataController::class, 'getLanguages']);
+Route::get('professions', [PublicDataController::class, 'getProfessions']);
+Route::get('employment-types', [PublicDataController::class, 'getEmploymentTypes']);
+Route::get('education-levels', [PublicDataController::class, 'getEducationLevels']);
+Route::get('desired-levels', [PublicDataController::class, 'getDesiredLevels']);
+Route::get('experience-levels', [PublicDataController::class, 'getExperienceLevels']);
 
-// User Jobs
-
-
-
-// Companie[
 
 // Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
