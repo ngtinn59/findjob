@@ -29,17 +29,16 @@ class JobApplied extends Mailable
     public function build()
     {
         $job = $this->job;
-        $company = $job->company;
-//        $jobtype = $job->jobtype->first()->name;
-        return $this->from('ngtin590@gmail.com', $company->name)
+        $company = $job->Company;
+        return $this->from('ngtin590@gmail.com', $company->company_name)
             ->subject('Xác nhận tuyển dụng')
             ->view('emails.job_applied')
             ->with([
                 'jobTitle' => $job->title,
-                'companyName' => $company->name,
-                'address' => $job->address,
-                'salary' => $job->salary,
-//                'jobtype' => $jobtype,
+                'companyName' => $job->Company->company_name,
+                'address' => $job->work_address,
+                'salary_from' => $job->salary_from,
+                'salary_to' => $job->salary_to,
                 'userName' => Auth::user()->name,
             ]);
     }

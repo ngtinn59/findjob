@@ -10,12 +10,23 @@ class ApplicationApproved extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $job;
+    public $name;
+    public $status;
+
+
     /**
      * Create a new message instance.
-     */
-    public function __construct()
+     *
+     * @param  mixed  $job
+     * @param  mixed  $name
+     * @param mixed $email
+ */
+    public function __construct($job, $name, $status)
     {
-        // Bạn có thể truyền dữ liệu vào constructor nếu cần
+        $this->job = $job;
+        $this->name = $name;
+        $this->status = $status;
     }
 
     /**
@@ -25,8 +36,14 @@ class ApplicationApproved extends Mailable
      */
     public function build()
     {
-        return $this->subject('Application Approved')
-            ->view('emails.application_approved');
-        // Nếu bạn có dữ liệu để truyền vào view, sử dụng ->with(['key' => $value])
+        return $this->from('ngtin590@gmail.com', $this->job->Company->company_name ?? 'Company')
+            ->subject('Cập nhật trạng thái ứng tuyển: ' . $this->job->title)
+            ->view('emails.application_status_update')
+            ->with([
+                'jobTitle' => $this->job->title,
+                'applicantName' => $this->name,
+                'status' => $this->status,
+                'companyName' => $this->job->Company->company_name
+            ]);
     }
 }

@@ -17,4 +17,20 @@ class City extends Model
     {
         return $this->hasOne('App\Models\Company', 'country_id', 'id');
     }
+
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'users_id');
+    }
+
+    public function districts()
+    {
+        return $this->hasMany(District::class);
+    }
 }

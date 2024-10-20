@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\Admin\CompanysizesController;
 use App\Http\Controllers\Api\Admin\CompanytypesController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Company extends Model
 {
     use HasFactory;
+    use Notifiable;
+
 
     protected $table = 'companies';
 
@@ -45,11 +48,18 @@ class Company extends Model
     {
         return $this->hasOne(City::class, 'id', 'city_id');
     }
+
+    public  function district()
+    {
+        return $this->hasOne(District::class, 'id', 'district_id');
+    }
     // In your Company model
     public function jobs()  : \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Job::class,'company_id','id');
     }
+
+
 
     public function skills() {
         return  $this->hasOne(Companyskill::class,'company_id','id');
