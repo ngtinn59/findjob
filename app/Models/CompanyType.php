@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Companysize extends Model
+class CompanyType extends Model
 {
     use HasFactory;
-    protected $table = 'company_sizes';
+    protected $table = 'company_types';
 
     protected $primaryKey = 'id';
     protected $guarded = [];

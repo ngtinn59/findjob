@@ -5,8 +5,12 @@ use App\Http\Controllers\Api\Candidates\NotificationController;
 use App\Http\Controllers\Api\Employer\CandidatesController;
 use App\Http\Controllers\Api\Employer\EmployerMailController;
 use App\Http\Controllers\PublicDataController;
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
+    AdminCompanySizesController,
+    AdminCompanyTypesController,
     AdminController,
     AdminJobController,
     AdminStatsController,
@@ -66,11 +70,46 @@ Route::post('/email/verification-notification', function (Request $request) {
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
 // Route to handle email verification
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::findOrFail($id);
+
+    if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+        return response()->json(['message' => 'Invalid email verification link'], 400);
+    }
+
+    if (!$user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
 
     return response()->json(['message' => 'Email đã được xác minh thành công!']);
 })->middleware(['signed'])->name('verification.verify');
+
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::findOrFail($id);
+
+    // Check if the email hash is correct
+    if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+        return response()->json([
+            'message' => 'Invalid email verification link'
+        ], 400);
+    }
+
+    // Check if the email is already verified
+    if (!$user->hasVerifiedEmail()) {
+        // Mark the email as verified and trigger the Verified event
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
+    return response()->json([
+        'message' => 'Email đã được xác minh thành công!'
+    ]);
+})->middleware(['signed'])->name('verification.verify');
+
+
+
+
 
 
 // Route to check if email is verified
@@ -80,6 +119,14 @@ Route::get('/email/verify', function (Request $request) {
     ]);
 })->middleware(['auth:sanctum'])->name('verification.notice');
 
+
+Route::get('/openapi.json', function () {
+    $jsonPath = storage_path('api.json');
+    if (file_exists($jsonPath)) {
+        return response()->json(json_decode(file_get_contents($jsonPath)), 200, [], JSON_PRETTY_PRINT);
+    }
+    return response()->json(['error' => 'OpenAPI JSON file not found'], 404);
+});
 
 // Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
@@ -199,9 +246,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
 
 
-        Route::resource('/company-types', CompanytypesController::class);
-        Route::resource('/company-sizes', CompanysizesController::class);
-        Route::resource('/companies', AdminCompaniesController::class);
+
         Route::get('/companies/count', [AdminCompaniesController::class, 'countCompaniesAndJobs']);
 
         route::resource('/jobs', AdminJobController::class);
@@ -235,6 +280,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::resource('/experience-levels', ExperienceLevelsController::class);
 
+        Route::resource('/company-types', AdminCompanyTypesController::class);
+        Route::resource('/company-sizes', AdminCompanySizesController::class);
+        Route::resource('/companies', AdminCompaniesController::class);
         // Lấy danh sách công ty
         Route::get('companies', [AdminCompaniesController::class, 'index']);
 
