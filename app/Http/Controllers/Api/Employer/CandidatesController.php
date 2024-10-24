@@ -7,6 +7,8 @@ use App\Models\Candidate;
 use App\Models\Objective;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\CandidateNotification;
+use Illuminate\Support\Facades\Mail;
 
 class CandidatesController extends Controller
 {
@@ -232,6 +234,49 @@ class CandidatesController extends Controller
             'cvs' => $cvs
         ]);
     }
+
+    public function sendEmailToCandidate(Request $request, $userId)
+    {
+
+        // Lấy thông tin ứng viên từ User ID
+        // Lấy người dùng hiện tại
+        $user = $request->user();
+        $company_name = $user->companies->company_name;
+        // Tìm hồ sơ ứng viên đã được lưu bởi người dùng dựa vào ID
+        $candidate = $user->savedCandidates()->with([
+            'profile',
+        ])->findOrFail($userId);
+        $email = $candidate->profile->email;
+        if (!$email) {
+            return response()->json(['message' => 'Ứng viên không tồn tại.'], 404);
+        }
+
+        // Lấy email từ ứng viên
+
+
+        // Kiểm tra xem email có hợp lệ không
+        if (empty($email)) {
+            return response()->json(['message' => 'Email của ứng viên không tồn tại.'], 400);
+        }
+
+        // Lấy nội dung email từ request
+        $subject = $request->input('subject');
+        $messageContent = $request->input('message');
+
+        if (!$subject || !$messageContent) {
+            return response()->json(['message' => 'Vui lòng cung cấp tiêu đề và nội dung email.'], 400);
+        }
+
+        // Gửi email
+        Mail::to($email)->send(new CandidateNotification($subject, $messageContent,$company_name));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email đã được gửi đến ứng viên thành công.',
+        ], 200);
+    }
+
+
 
 
 }

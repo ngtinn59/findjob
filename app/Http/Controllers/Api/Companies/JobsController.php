@@ -90,7 +90,7 @@ class JobsController extends Controller
     {
         $user = auth()->user();
         $company = $user->companies->id ?? null; // Check if the user has a company
-        $statusJob = Constant::user_status_inactive; // Initial status for a job post (inactive)
+        $statusJob = 0;
 
         if (!$company) {
             return response()->json([
@@ -422,6 +422,7 @@ class JobsController extends Controller
                         'featured' => $job->featured,
                         'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
                         'company' => $job->company->company_name,
+                        'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
@@ -465,7 +466,7 @@ class JobsController extends Controller
         $dataRespone = [
             'id' => $job->id,
             'company' => [
-                'logo' => $job->Company->logo,
+                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                 'name' => $job->Company->company_name,
                 'size' => $job->Company->companysize->name,
             ],
@@ -671,7 +672,7 @@ class JobsController extends Controller
                 'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
 
                 'company' => $job->company->company_name,
-                'logo' => $job->company->logo,
+                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
@@ -793,7 +794,7 @@ class JobsController extends Controller
             return [
                 'id' => $job->id,
                 'company' => $company ? $company->company_name : null,
-                'logo' => $company ? $company->logo : null, // Kiểm tra xem công ty có tồn tại không trước khi truy cập trường name
+                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                 'title' => $job->title,
                 'city' => $city ? $city->name : null, // Kiểm tra xem thành phố có tồn tại không trước khi truy cập trường name
                 'salary_to' => $job->salary_to,
@@ -815,8 +816,8 @@ class JobsController extends Controller
     {
 
 
-        $jobs = Job::where('featured', 1);
-
+        $jobs = Job::where('featured', 1)
+            ->where('status', 1); // Thêm điều kiện trạng thái
 
         // Thực hiện truy vấn và phân trang kết quả
         $results = $jobs->with(['company', 'city', 'profession'])

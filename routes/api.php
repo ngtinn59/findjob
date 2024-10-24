@@ -232,6 +232,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('employer/candidates/saved', [CandidatesController::class, 'index']);
         Route::get('employer/saved-candidates/{id}', [CandidatesController::class, 'show']);
         Route::resource('employer/companies', CompaniesController::class);
+        Route::post('/employer/candidates/{userId}/send-email', [CandidatesController::class, 'sendEmailToCandidate']);
 
 
     });

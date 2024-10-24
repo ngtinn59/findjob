@@ -374,8 +374,8 @@ class CompaniesController extends Controller
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
-                'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                'featured' => $job->featured,
+                'is_hot' => ($job->views > 100) ? 1 : 0,
                 'company' => $job->company->company_name,
                 'salary' => [
                     'salary_from' => $job->salary_from,

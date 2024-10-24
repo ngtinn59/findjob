@@ -10,4 +10,6 @@ class Candidate extends Model
     protected $table = 'favorites_candidates';
     protected $primaryKey = 'id';
     protected $guarded = [];
+
+
 }
