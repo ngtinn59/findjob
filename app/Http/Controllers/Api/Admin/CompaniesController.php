@@ -19,16 +19,11 @@ class CompaniesController extends Controller
         $companiesData = $companies->map(function ($company) {
             return [
                 'id' => $company->id,
-                'name' => $company->name,
-                'description' => $company->description,
-                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
-                'webstie' => $company->webstie,
-                'facebook' => $company->facebook,
-                'address' => $company->address,
                 'country' => $company->country->name,
                 'city' => $company->city->name,
-                'created_at' => $company->created_at->diffForHumans(),
-                'updated_at' => $company->updated_at->diffForHumans(),
+                'district_id' => $company->city->name,
+
+
             ];
         });
         return response()->json([

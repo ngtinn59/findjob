@@ -3,27 +3,34 @@
 namespace App\Http\Controllers\Api\Job;
 
 use App\Mail\ApplicationApproved;
+use App\Mail\ApplicationContacted;
+use App\Mail\ApplicationTestRound;
+use App\Mail\ApplicationInterview;
+
 use App\Mail\ApplicationRejected;
 use App\Models\Job;
 use App\Models\job_user;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\ApplicationRejectedNotification;
+use App\Notifications\ApplicationStatusNotification;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 
-class JobApplicationController extends Controller
+class   JobApplicationController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $user = Auth::user(); // Get the currently authenticated user
+        $user = Auth::user(); // Lấy người dùng hiện tại
 
-        // Check if the user has a company associated with them
+        // Kiểm tra nếu người dùng không có công ty liên kết
         if (!$user->companies) {
             return response()->json([
                 'success' => false,
@@ -31,27 +38,38 @@ class JobApplicationController extends Controller
             ], 403);
         }
 
-        // Get the company ID of the authenticated user
+        // Lấy công ty đầu tiên của người dùng (nếu có nhiều công ty, điều này cần được điều chỉnh)
         $companyId = $user->companies->id;
 
-        // Load only jobs that belong to the company of the authenticated user
+        // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại
         $jobs = Job::with(['applicants' => function ($query) {
-            $query->withPivot('status', 'cv'); // Include pivot table fields
+            // Bao gồm các trường trong bảng pivot
+            $query->withPivot('status', 'cv', 'name', 'phone', 'email', 'created_at');
         }])->where('company_id', $companyId)->get();
 
+
+        // Chuyển đổi dữ liệu công việc và ứng viên
         $jobsData = $jobs->map(function ($job) {
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'last_date' => $job->last_date,
-                'created_at' => $job->created_at->diffForHumans(),
                 'applicants' => $job->applicants->map(function ($applicant) {
+                    $statusMap = [
+                        'pending'      => 'Chờ xác nhận',
+                        'contacted'    => 'Đã liên hệ',
+                        'test_round'   => 'Vòng test',
+                        'interview'    => 'Vòng phỏng vấn',
+                        'hired'        => 'Trúng tuyển',
+                        'not_selected' => 'Không trúng tuyển'
+                    ];
+
                     return [
                         'id' => $applicant->id,
-                        'name' => $applicant->name,
-                        'email' => $applicant->email,
-                        'status' => $applicant->pivot->status,
+                        'name' => $applicant->pivot->name,  // Lấy tên từ bảng pivot nếu có
+                        'email' => $applicant->pivot->email,  // Lấy email từ bảng pivot nếu có
+                        'status' => $statusMap[$applicant->pivot->status] ?? $applicant->pivot->status,  // Chuyển đổi trạng thái theo enum
                         'cv' => $applicant->pivot->cv ? url('storage/cv/' . $applicant->pivot->cv) : null,
+                        'created_at' => $applicant->pivot->created_at ? Carbon::parse($applicant->pivot->created_at)->format('Y-m-d H:i:s') : null,  // Định dạng created_at
                     ];
                 }),
             ];
@@ -59,7 +77,7 @@ class JobApplicationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'success',
+            'message' => 'Lấy dữ liệu thành công',
             'data' => $jobsData,
             'status_code' => 200
         ]);
@@ -125,7 +143,7 @@ class JobApplicationController extends Controller
                     'name' => $applicant->name,
                     'email' => $applicant->email,
                     'status' => $applicant->pivot->status,
-                    'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
+                    'cv' => $applicant->pivot->cv ? asset('app/public/to/cv/' . $applicant->pivot->cv) : null,
                 ];
             }),
         ];
@@ -158,14 +176,73 @@ class JobApplicationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(job_user $job_user)
+    public function destroy($jobId, $userId)
     {
-        //
+        try {
+            // Lấy người dùng hiện tại
+            $user = Auth::user();
+
+            // Kiểm tra xem người dùng có công ty liên kết hay không
+            if (!$user->companies) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có thông tin công ty.',
+                ], 403);
+            }
+
+            // Lấy công ty đầu tiên của người dùng
+            $companyId = $user->companies->id;
+
+            // Tìm công việc dựa trên jobId và kiểm tra xem nó thuộc về công ty của người dùng
+            $job = Job::where('id', $jobId)
+                ->where('company_id', $companyId)
+                ->first();
+
+            if (!$job) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy công việc hoặc bạn không có quyền truy cập vào công việc này.',
+                ], 404);
+            }
+
+            // Tìm ứng viên trong bảng pivot với cả userId và jobId
+            $jobApplicant = $job->applicants()
+                ->where('users.id', $userId)
+                ->where('job_user.job_id', $jobId)
+                ->firstOrFail();
+            // Xóa bản ghi trong bảng pivot
+            $job->applicants()->detach($userId);
+            // Gửi thông báo cho ứng viên
+            $jobApplicant->notify(new ApplicationRejectedNotification($job));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa ứng viên khỏi công việc thành công và thông báo đã được gửi tới ứng viên.',
+                'status_code' => 200,
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy ứng viên ứng tuyển vào công việc này.',
+                'status_code' => 404,
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa ứng viên.',
+                'error' => $e->getMessage(),
+                'status_code' => 500,
+            ], 500);
+        }
     }
+
 
     public function processApplication(Request $request, $jobId, $userId)
     {
-        $job = Job::find($jobId);
+        $job = Job::with(['applicants' => function ($query) use ($userId) {
+            $query->where('users.id', $userId)->withPivot('status', 'cv', 'name', 'email'); // Include necessary pivot fields
+        }])->find($jobId);
+
         if (!$job) {
             return response()->json([
                 'success' => false,
@@ -182,17 +259,21 @@ class JobApplicationController extends Controller
                 'status_code' => 403,
             ], 403);
         }
-        $user = User::find($userId);
-        if (!$user) {
+
+        // Retrieve the applicant and their pivot data
+        $applicant = $job->applicants->first();
+        $email = $applicant->pivot->email;
+        $name = $applicant->pivot->name;
+        if (!$applicant) {
             return response()->json([
                 'success' => false,
-                'message' => 'Người dùng không tồn tại.',
+                'message' => 'Người dùng không tồn tại hoặc không ứng tuyển vào công việc này.',
                 'status_code' => 404
             ], 404);
         }
 
         $status = $request->input('status');
-        if (!in_array($status, ['approved', 'rejected'])) {
+        if (!in_array($status, ['pending', 'contacted', 'test_round', 'interview', 'hired', 'not_selected'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Trạng thái không hợp lệ.',
@@ -201,35 +282,43 @@ class JobApplicationController extends Controller
             ], 400);
         }
 
-        // Update the status of the application
-        $job->users()->updateExistingPivot($user->id, ['status' => $status]);
+        // Update the status of the application in the pivot table
+        $job->users()->updateExistingPivot($userId, ['status' => $status]);
+        Mail::to($email)->send(new ApplicationApproved($job, $name, $status));
+        $applicant->notify(new ApplicationStatusNotification($job, $status));
 
-        // Send notification email to the applicant
-        if ($status === 'approved') {
-            Mail::to($user->email)->send(new ApplicationApproved($job, $user));
-        } elseif ($status === 'rejected') {
-            Mail::to($user->email)->send(new ApplicationRejected($job, $user));
-        }
+
+
 
         // Fetch updated job data
         $job = Job::with(['applicants' => function ($query) {
-            $query->withPivot('status', 'cv'); // Include pivot table fields
+            $query->withPivot('status', 'cv', 'name', 'email'); // Include pivot table fields
         }])->find($jobId);
+
+        $statusMap = [
+            'pending'      => 'Chờ xác nhận',
+            'contacted'    => 'Đã liên hệ',
+            'test_round'   => 'Vòng test',
+            'interview'    => 'Vòng phỏng vấn',
+            'hired'        => 'Trúng tuyển',
+            'not_selected' => 'Không trúng tuyển'
+        ];
 
         $jobData = [
             'id' => $job->id,
             'title' => $job->title,
             'created_at' => $job->created_at->diffForHumans(),
-            'applicants' => $job->applicants->map(function ($applicant) {
+            'applicants' => $job->applicants->map(function ($applicant) use ($statusMap) {
                 return [
                     'id' => $applicant->id,
-                    'name' => $applicant->name,
-                    'email' => $applicant->email,
-                    'status' => $applicant->pivot->status,
+                    'name' => $applicant->pivot->name,
+                    'email' => $applicant->pivot->email,
+                    'status' => $statusMap[$applicant->pivot->status] ?? 'Chưa xác định', // Thêm trạng thái đã được dịch
                     'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
                 ];
             }),
         ];
+
 
         return response()->json([
             'success' => true,

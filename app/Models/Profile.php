@@ -52,5 +52,25 @@ class Profile extends Model
         return $this->hasMany(Objective::class,'profiles_id','id');
     }
 
+    public function languageskills()
+    {
+        return $this->hasMany(LanguageSkill::class,'profiles_id','id');
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class, 'city_id');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(District::class, 'district_id');
+    }
+
 
 }

@@ -82,6 +82,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return DB::table('favorites')->where('users_id', auth()->user()->id)->where('job_id', $this->id)->exists();
     }
 
+    public function savedCandidates()
+    {
+        return $this->belongsToMany(Objective::class, 'favorites_candidates', 'user_id', 'objective_id')->withTimestamps();
+    }
+
     public function job(){
         return $this->hasMany(Job::class,'users_id','id');
     }

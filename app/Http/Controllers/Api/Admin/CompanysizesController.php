@@ -64,10 +64,7 @@ class CompanysizesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => [
-                'id' => $companysize->id,
-                'name' => $companysize->name,
-            ],
+            'data' => $companysize,
             'status_code' => 200
         ]);
     }

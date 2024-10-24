@@ -20,7 +20,7 @@ class UsersTableSeeder extends Seeder
             'password' => Hash::make('password'),
             'account_type' => 3,
             'email_verified_at' => now(),
-            'status' => 1,
+            'status' => 3,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

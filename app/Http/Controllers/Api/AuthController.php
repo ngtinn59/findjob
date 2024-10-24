@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -119,11 +120,12 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Đăng nhập thành công',
             'name' => $user->name,
-            'access_token' => $token,
-            'email_verified' => $user->hasVerifiedEmail(),
+                'access_token' => $token,
+                'email_verified' => $user->hasVerifiedEmail(),
+                'token_type' => 'bearer',
             'status_code' => 200,
-            'token_type' => 'bearer',
         ]);
     }
 
@@ -131,7 +133,11 @@ class AuthController extends Controller
     {
         // Xóa tất cả token của người dùng khi đăng xuất
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Logout thành công'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Đăng xuất thành công',
+            'status_code' => 200
+        ], 200);
     }
 
     public function changePassword(Request $request)
@@ -139,7 +145,7 @@ class AuthController extends Controller
         // Xác thực dữ liệu với thông báo tùy chỉnh
         $validator = Validator::make($request->all(), [
             'current_password' => 'required',
-            'new_password' => 'required|min:8|confirmed',
+            'new_password' => 'required|min:8',
         ], [
             'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
             'new_password.required' => 'Vui lòng nhập mật khẩu mới.',
@@ -220,7 +226,7 @@ class AuthController extends Controller
         try {
             Mail::send('emails.reset-password', ['token' => $token], function ($message) use ($request) {
                 $message->to($request->email);
-                $message->subject('Reset Password Notification');
+                $message->subject('Thông báo đặt lại mật khẩu');
             });
         } catch (\Exception $e) {
             return response()->json([
@@ -270,7 +276,7 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json([
-                'error' => 'Email không tồn tạzi trong hệ thống.',
+                'error' => 'Email không tồn tại trong hệ thống.',
                 'status_code' => 404,
             ], 404);
         }

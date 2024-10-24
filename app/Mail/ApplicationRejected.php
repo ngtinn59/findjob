@@ -9,13 +9,19 @@ use Illuminate\Queue\SerializesModels;
 class ApplicationRejected extends Mailable
 {
     use Queueable, SerializesModels;
-
+    public $job;
+    public $name;
+    public $email;
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($job, $name,$email)
     {
-        // Bạn có thể truyền dữ liệu vào constructor nếu cần
+        // Truyền dữ liệu công việc và ứng viên vào mail class
+        $this->job = $job;
+        $this->name = $name;
+        $this->email = $email;
+
     }
 
     /**
@@ -23,10 +29,21 @@ class ApplicationRejected extends Mailable
      *
      * @return $this
      */
+
+
+
     public function build()
     {
-        return $this->subject('Application Rejected')
-            ->view('emails.application_rejected');
-        // Nếu bạn có dữ liệu để truyền vào view, sử dụng ->with(['key' => $value])
+        // Lấy tên công ty từ công việc liên quan
+        $companyName = $this->job->company->company_name ?? 'Company';  // Nếu không có, sử dụng giá trị mặc định 'Company'
+
+        return $this->from('ngtin590@gmail.com', $companyName)
+            ->subject('Cập nhật trạng thái xin việc - ' . $this->job->title)
+            ->view('emails.application_rejected')
+            ->with([
+                'jobTitle' => $this->job->title,
+                'applicantName' => $this->name,   // Lấy tên từ bảng pivot
+                'applicantEmail' => $this->email, // Lấy email từ bảng pivot
+            ]);
     }
 }
