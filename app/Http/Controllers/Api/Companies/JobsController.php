@@ -51,18 +51,17 @@ class JobsController extends Controller
 
         // Dữ liệu công việc
         $jobsData = $jobs->map(function ($job) {
-            $applicationsCount = $job->applicants()->count(); // Số lượng người ứng tuyển
-            $viewsCount = $job->views; // Số lượng người xem (giả định có trường views trong bảng jobs)
+            $applicationsCount = $job->applicants()->count();
+            $viewsCount = $job->views;
 
             return [
-                'job_id' => $job->id,
+                'id' => $job->id,
                 'title' => $job->title,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
-                'created_at' => $job->created_at->format('Y-m-d H:i:s'),
+                'featured' => $job->featured,
                 'last_date' => $job->last_date,
                 'status' => ($job->status == 3) ? 'Đã duyệt' : 'Chưa duyệt',
-                'applications_count' => $applicationsCount, // Số lượng người ứng tuyển
-                'views_count' => $viewsCount, // Số lượng người xem
+                'applications_count' => $applicationsCount,
+                'views_count' => $viewsCount,
             ];
         });
 
@@ -180,8 +179,7 @@ class JobsController extends Controller
             'data' => [
                 'job_id' => $job->id,
                 'title' => $job->title,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
-                'created_at' => $job->created_at->format('Y-m-d H:i:s'),
+                'featured' => $job->featured,
                 'last_date' => $job->last_date,
                 'status' => $statusText = ($job->status == 3) ? 'Đã duyệt' : (($job->status == 4) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
             ],
@@ -202,7 +200,8 @@ class JobsController extends Controller
         $user = auth()->user();
 
         // Kiểm tra xem người dùng có công ty hay không
-        $company = $user->companies; // Lấy công ty đầu tiên, nếu có
+        $company = $user->companies()->first(); // Lấy công ty đầu tiên, nếu có
+
         // Kiểm tra xem công việc này có thuộc về công ty của người dùng hay không
         if (!$company) {
             return response()->json([
@@ -248,7 +247,7 @@ class JobsController extends Controller
                 'contact_name' => $job->contact_name,
                 'phone' => $job->phone,
                 'email' => $job->email,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
+                'featured' => $job->featured,
             ],
             'status_code' => 200
         ]);
@@ -354,7 +353,7 @@ class JobsController extends Controller
             'data' => [
                 'job_id' => $job->id,
                 'title' => $job->title,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
+                'featured' => $job->featured,
                 'created_at' => $job->created_at->format('Y-m-d H:i:s'),
                 'last_date' => $job->last_date,
                 'status' => ($job->status == 3) ? 'Đã duyệt' : 'Chưa duyệt',
@@ -400,10 +399,45 @@ class JobsController extends Controller
     }
 
 
-    public function  indexShow()
+    public function indexShow(Request $request)
     {
+        // Bắt đầu truy vấn
+        $jobs = Job::query();
 
+        // Lấy tất cả công việc, có thể thêm quan hệ với công ty, thành phố và ngành nghề nếu cần
+        $results = $jobs->with(['company', 'city', 'profession'])
+            ->paginate(10); // Phân trang 10 công việc mỗi trang
+
+        // Lấy công việc đề xuất
+        $suggestedJobs = $this->getSuggestedJobs();
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'jobs' => $results->map(function ($job) {
+                    return [
+                        'id' => $job->id,
+                        'title' => $job->title,
+                        'featured' => $job->featured,
+                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
+                        'company' => $job->company->company_name,
+                        'salary' => [
+                            'salary_from' => $job->salary_from,
+                            'salary_to' => $job->salary_to
+                        ],
+                        'city' => $job->city->name,
+                        'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
+                    ];
+                }),
+                'suggested_jobs' => $suggestedJobs,
+            ],
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+            'total' => $results->total(),
+        ]);
     }
+
 
     public function showJob(Job $job)
     {
@@ -558,8 +592,8 @@ class JobsController extends Controller
                     return [
                         'id' => $job->id,
                         'title' => $job->title,
-                        'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
-                        'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                        'featured' => $job->featured,
+                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
                         'company' => $job->company->company_name,
                         'salary' => [
                             'salary_from' => $job->salary_from,
@@ -633,8 +667,8 @@ class JobsController extends Controller
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'featured' => ($job->featured == 1) ? 'Tuyển gấp' : 'Không có',
-                'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                'featured' => $job->featured,
+                'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
 
                 'company' => $job->company->company_name,
                 'logo' => $job->company->logo,
@@ -796,8 +830,8 @@ class JobsController extends Controller
                     return [
                         'id' => $job->id,
                         'title' => $job->title,
-                        'featured' => 'Tuyển gấp', // Luôn là tuyển gấp do 'featured' = 1
-                        'is_hot' => ($job->views > 100) ? 'HOT' : 'Không hot', // Kiểm tra lượt xem
+                        'featured' => $job->featured,
+                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
                         'company' => $job->company->company_name,
                         'salary' => [
                             'salary_from' => $job->salary_from,

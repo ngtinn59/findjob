@@ -32,12 +32,12 @@ class Company extends Model
 
     public  function companytype()
     {
-        return $this->hasOne(Companytype::class,'id','company_type_id');
+        return $this->hasOne(CompanyType::class,'id','company_type_id');
     }
 
     public  function companysize()
     {
-        return $this->hasOne(Companysize::class, 'id', 'company_size_id');
+        return $this->hasOne(CompanySize::class, 'id', 'company_size_id');
     }
 
     public  function country()

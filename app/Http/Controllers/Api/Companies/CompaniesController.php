@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\aboutme;
 use App\Models\Company;
 use App\Models\Country;
-use App\Models\Location;
-use App\Models\Location_Comapny;
 use App\Models\Profile;
 use App\Models\User;
 use App\Utillities\Common;
@@ -24,14 +22,14 @@ class CompaniesController extends Controller
         $user = auth()->user();
 
         // Retrieve companies associated with the user
-        $companies = $user->companies()->with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
+        $companies = $user->companies()->with(['companyType', 'companySize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
             $query->where('status', 1);
         }])->get();
 
         // Map the company data as before
         $companiesdata = $companies->map(function ($company) {
-            $companyType = optional($company->companytype)->name;
-            $companySize = optional($company->companysize)->name;
+            $companyType = optional($company->companyType)->name;
+            $companySize = optional($company->companySize)->name;
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
             $skills = optional($company->skills)->name;
@@ -144,7 +142,7 @@ class CompaniesController extends Controller
             'phone' => $company->phone, // Thêm số điện thoại nếu có trong schema
             'company_email' => $company->company_email, // Thêm email công ty
             'tax_code' => $company->tax_code, // Thêm mã số thuế
-            'date_of_establishment' => $company->date_of_establishment, // Thêm ngày thành lập
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'),
         ];
 
 
@@ -164,10 +162,10 @@ class CompaniesController extends Controller
     public function show(Company $company)
     {
 
-        $company->load(['companytype', 'companysize', 'country', 'city', 'district']);
+        $company->load(['companyType', 'companySize', 'country', 'city', 'district']);
         // Use optional to avoid trying to get properties on a null object
-        $companyType = optional($company->companytype)->name;
-        $companySize = optional($company->companysize)->name;
+        $companyType = optional($company->companyType)->name;
+        $companySize = optional($company->companySize)->name;
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
         $district = optional($company->district)->name;
@@ -365,14 +363,14 @@ class CompaniesController extends Controller
         // Tải thông tin chi tiết của công ty bao gồm các quan hệ
         $company->load(['companytype', 'companysize', 'country', 'city', 'district', 'jobs']);
         // Sử dụng optional để tránh lỗi khi đối tượng null
-        $companyType = optional($company->companytype)->name;
-        $companySize = optional($company->companysize)->name;
+        $companyType = optional($company->companyType)->name;
+        $companySize = optional($company->companySize)->name;
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
         $district = optional($company->district)->name;
 
         // Đếm số lượng công việc của công ty
-        $jobsWithStatusActive = $company->jobs()->where('status', 3)->get()->map(function($job) {
+        $jobsWithStatusActive = $company->jobs()->where('status', 1)->get()->map(function($job) {
             return [
                 'id' => $job->id,
                 'title' => $job->title,
@@ -412,7 +410,7 @@ class CompaniesController extends Controller
             'is_hot' => $company->is_hot,
             'logo' => asset('uploads/images/' . $company->logo),
             'banner' => asset('uploads/images/' . $company->banner),
-            'jobs' => $jobsWithStatusActive,  // Danh sách các công việc có trạng thái 3
+            'jobs' => $jobsWithStatusActive,
 
         ];
 
@@ -426,14 +424,11 @@ class CompaniesController extends Controller
 
     public function indexFeaturedCompanies(Request $request)
     {
-        // Bắt đầu truy vấn, chỉ lấy các công ty có 'featured' = 1 (Nổi bật)
         $companies = Company::where('is_hot', 1);
 
-        // Thực hiện truy vấn và phân trang kết quả
-        $results = $companies->with(['city']) // Giả sử công ty có liên quan đến thành phố
-        ->paginate(10); // Phân trang 10 công ty mỗi trang
+        $results = $companies->with(['city'])
+        ->paginate(10);
 
-        // Trả về kết quả dưới dạng JSON
         return response()->json([
             'success' => true,
             'data' => [
@@ -442,8 +437,8 @@ class CompaniesController extends Controller
                         'id' => $company->id,
                         'company_name' => $company->company_name,
                         'logo' => asset('uploads/images/' . $company->logo),
-                        'featured' => 'Công ty nổi bật', // Luôn là nổi bật do 'featured' = 1
-                        'city' => $company->city->name,  // Giả sử công ty có thuộc tính thành phố
+                        'is_hot' => $company->is_hot,
+                        'city' => $company->city->name,
                         'created_at' => \Carbon\Carbon::parse($company->created_at)->format('d-m-Y'),
                     ];
                 }),

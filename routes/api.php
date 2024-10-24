@@ -131,8 +131,8 @@ Route::get('/openapi.json', function () {
 // Public Routes
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
-Route::get('/company-types', [CompanytypesController::class, 'index']);
-Route::get('/company-sizes', [CompanysizesController::class, 'index']);
+Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
+Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::resource('/districts', DistrictsController::class);
@@ -171,7 +171,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
     Route::get('/jobs/search', [JobsController::class, 'search']);
     Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
-    Route::get('/list-companies/urgent', [CompaniesController::class, 'indexFeaturedCompanies']);
+    Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
 
     Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
     // Profile Routes
@@ -182,7 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('profiles')->group(function () {
         Route::resource('/educations', EducationController::class);
         Route::resource('/skills', SkillsController::class);
-        Route::resource('/about-me', AboutmeController::class);
+        Route::resource('/aboutMe', AboutmeController::class);
         Route::resource('/certificates', CertificatesController::class);
         Route::resource('/awards', AwardsController::class);
         Route::resource('/projects', ProjectsController::class);
