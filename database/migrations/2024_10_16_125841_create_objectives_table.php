@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('profession_id')->nullable(); // Khóa ngoại tới bảng professions
             $table->unsignedBigInteger('employment_type_id')->nullable(); // Khóa ngoại tới bảng employment_types
             $table->unsignedBigInteger('experience_level_id')->nullable();
-            $table->unsignedBigInteger('workplaces')->nullable();
+            $table->unsignedBigInteger('workplace_id')->nullable();
 
             $table->string('work_address')->nullable();      // Địa chỉ làm việc
 
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->foreign('experience_level_id')->references('id')->on('experience_levels')->onDelete('set null');
 
             $table->foreign('profiles_id')->references('id')->on('profiles')->onDelete('cascade');
-            $table->foreign('workplaces')->references('id')->on('workplaces')->onDelete('set null');
+            $table->foreign('workplace_id')->references('id')->on('workplaces')->onDelete('set null');
 
             $table->timestamps();
         });

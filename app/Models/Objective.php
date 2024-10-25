@@ -61,6 +61,9 @@ class Objective extends Model
     {
         return $this->belongsTo(ExperienceLevel::class, 'experience_level_id');
     }
-
+    public function workPlace()
+    {
+        return $this->belongsTo(Workplace::class, 'workplace_id');
+    }
 
 }
