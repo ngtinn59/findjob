@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Employer;
 use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Objective;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Mail\CandidateNotification;
@@ -103,15 +104,16 @@ class CandidatesController extends Controller
         $candidateData = [
             'id' => $candidate->id,
             'profile' => [
-                'name' => $candidate->profile->name ?? null,
-                'phone' => $candidate->profile->phone ?? null,
-                'email' => $candidate->profile->email ?? null,
-                'image_url' => url('uploads/images/' . $candidate->profile->image),
-                'gender' => $candidate->profile->gender === 0 ? 'Nam' : 'Nữ',
-                'address' => $candidate->profile->address ?? null,
-                'country_id' => $candidate->profile->country->name ?? null,
-                'city_id' => $candidate->profile->city->name ?? null,
-                'district_id' => $candidate->profile->district->name ?? null,
+                'id' => $candidate->profile->id,
+                'name' => $candidate->profile->name,
+                'title' => $candidate->profile->title,
+                'phone' => $candidate->profile->phone,
+                'email' => $candidate->profile->email,
+                'age' => $candidate->profile->birthday ? Carbon::parse($candidate->profile->birthday)->age : null,
+                'image_url' => url('uploads/images/' . $candidate->profile->image), // Xây dựng URL của hình ảnh
+                'gender' => $candidate->profile->gender,
+                'location' => $candidate->profile->location,
+                'website' => $candidate->profile->website,
                 'objective' => [
                     'desired_position' => $candidate->desired_position,
                     'desired_level' => $candidate->desiredLevel->name ?? null,
@@ -123,48 +125,87 @@ class CandidatesController extends Controller
                     'salary_from' => $candidate->salary_from,
                     'salary_to' => $candidate->salary_to,
                     'file' => asset('cvs/' . $candidate->file),
-                    'status' => 'hoạt động', // Vì đã lọc theo status = 3
+                    'status' => $candidate->status,
                     'country' => $candidate->country->name ?? null,
                     'city' => $candidate->city->name ?? null,
                     'district' => $candidate->district->name ?? null,
                 ],
             ],
-            'experiences' => $candidate->profile->experiences->map(function ($experience) {
+
+            'aboutme' => $candidate->profile->abouts->map(function ($aboutme) {
                 return [
-                    'company' => $experience->company,
-                    'position' => $experience->position,
-                    'start_date' => $experience->start_date,
-                    'end_date' => $experience->end_date ?? 'Present',
+                    'description' => $aboutme->description,
                 ];
             }),
             'educations' => $candidate->profile->educations->map(function ($education) {
+
                 return [
                     'degree' => $education->degree,
                     'institution' => $education->institution,
                     'start_date' => $education->start_date,
-                    'end_date' => $education->end_date ?? 'Ongoing',
-                ];
-            }),
-            'certificates' => $candidate->profile->certificates->map(function ($certificate) {
-                return [
-                    'title' => $certificate->title,
-                    'provider' => $certificate->provider,
-                    'issue_date' => $certificate->issueDate,
-                    'description' => $certificate->description,
+                    'end_date' => $education->end_date,
+                    'additionalDetail' => $education->additionalDetail,
                 ];
             }),
             'skills' => $candidate->profile->skills->map(function ($skill) {
+                $levelString = '';
+                switch ($skill->level) {
+                    case 1:
+                        $levelString = 'Beginner';
+                        break;
+                    case 2:
+                        $levelString = 'Intermediate';
+                        break;
+                    case 3:
+                        $levelString = 'Excellent';
+                        break;
+                    default:
+                        $levelString = 'Unknown';
+                        break;
+                }
+
                 return [
                     'name' => $skill->name,
-                    'level' => $skill->level,
+                    'level' => $levelString,
                 ];
             }),
-            'languages_skills' => $candidate->profile->languageskills->map(function ($languageskill) {
+            'PersonalProject' => $candidate->profile->projects->map(function ($project) {
+
+
                 return [
-                    'name' => $languageskill->language->name ?? null,
+                    'title' => $project->title,
+                    'start_date' => $project->start_date,
+                    'end_date' => $project->end_date,
+
+                    'description' => $project->description,
                 ];
             }),
-            'created_at' => $candidate->created_at->format('Y-m-d H:i:s'),
+            'Certificate' => $candidate->profile->certificates->map(function ($certificates) {
+                return [
+                    'title' => $certificates->title,
+                    'provider' => $certificates->provider,
+                    'issueDate' => $certificates->issueDate,
+                    'description' => $certificates->description,
+                    'certificateUrl' => $certificates->certificateUrl,
+                ];
+            }),
+            'WorkExperience' => $candidate->profile->experiences->map(function ($experience) {
+                return [
+                    'position' => $experience->position,
+                    'company' => $experience->company,
+                    'start_date' => $experience->start_date,
+                    'end_date' => $experience->end_date,
+                    'responsibilities' => $experience->responsibilities,
+                ];
+            }),
+            'Award' => $candidate->profile->awards->map(function ($awards) {
+                return [
+                    'title' => $awards->title,
+                    'provider' => $awards->provider,
+                    'issueDate' => $awards->issueDate,
+                    'description' => $awards->description,
+                ];
+            }),
         ];
 
         // Trả về dữ liệu dạng JSON

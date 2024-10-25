@@ -74,7 +74,7 @@ class ObjectivesController extends Controller
                     'status' => $objective->status,
                     'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
                     'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
-                    'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                    'district' => $objective->district ? $objective->district->name : null,
                     'created_at' => $objective->created_at,
                     'updated_at' => $objective->updated_at,
             ];
@@ -111,6 +111,7 @@ class ObjectivesController extends Controller
             'salary_to' => 'required|integer|min:0|gte:salary_from',
             'status' => 'required',
             'country_id' => 'required|integer',
+            'workplace_id' => 'required|integer',
             'city_id' => 'required|integer',
             'district_id' => 'required|integer',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048', // Kiểm tra file nếu có
@@ -651,5 +652,137 @@ class ObjectivesController extends Controller
             'data' => $objectiveData,
         ]);
     }
+
+    public function showCandidate($id)
+    {
+        // Tìm ứng viên theo ID
+        $objective = Objective::with('profile', 'experienceLevel', 'desiredLevel', 'employmentType', 'educationLevel', 'country', 'city', 'district')
+            ->where('id', $id)
+            ->where('status', 1) // Chỉ lấy ứng viên có status = 1
+            ->first();
+
+        // Kiểm tra xem ứng viên có tồn tại không
+        if (!$objective) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ứng viên không tồn tại.',
+                'status_code' => 404,
+            ], 404);
+        }
+
+        // Chuyển đổi dữ liệu để trả về dưới dạng JSON
+        $candidateData = [
+            'id' => $objective->id,
+            'profile' => [
+                'id' => $objective->profile->id,
+                'name' => $objective->profile->name,
+                'title' => $objective->profile->title,
+                'phone' => $objective->profile->phone,
+                'email' => $objective->profile->email,
+                'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
+                'image_url' => url('uploads/images/' . $objective->profile->image), // Xây dựng URL của hình ảnh
+                'gender' => $objective->profile->gender,
+                'location' => $objective->profile->location,
+                'website' => $objective->profile->website,
+                'objective' => [
+                    'desired_position' => $objective->desired_position,
+                    'desired_level' => $objective->desiredLevel->name ?? null,
+                    'profession' => $objective->profession->name ?? null,
+                    'employment_type' => $objective->employmentType->name ?? null,
+                    'experience_level' => $objective->experienceLevel->name ?? null,
+                    'work_address' => $objective->work_address,
+                    'education_level' => $objective->educationLevel->name ?? null,
+                    'salary_from' => $objective->salary_from,
+                    'salary_to' => $objective->salary_to,
+                    'file' => asset('cvs/' . $objective->file),
+                    'status' => $objective->status,
+                    'country' => $candidate->country->name ?? null,
+                    'city' => $candidate->city->name ?? null,
+                    'district' => $candidate->district->name ?? null,
+                ],
+                'aboutme' => $objective->profile->abouts->map(function ($aboutme) {
+                    return [
+                        'description' => $aboutme->description,
+                    ];
+                }),
+                'educations' => $objective->profile->educations->map(function ($education) {
+
+                    return [
+                        'degree' => $education->degree,
+                        'institution' => $education->institution,
+                        'start_date' => $education->start_date,
+                        'end_date' => $education->end_date,
+                        'additionalDetail' => $education->additionalDetail,
+                    ];
+                }),
+                'skills' => $objective->profile->skills->map(function ($skill) {
+                    $levelString = '';
+                    switch ($skill->level) {
+                        case 1:
+                            $levelString = 'Beginner';
+                            break;
+                        case 2:
+                            $levelString = 'Intermediate';
+                            break;
+                        case 3:
+                            $levelString = 'Excellent';
+                            break;
+                        default:
+                            $levelString = 'Unknown';
+                            break;
+                    }
+
+                    return [
+                        'name' => $skill->name,
+                        'level' => $levelString,
+                    ];
+                }),
+                'PersonalProject' => $objective->profile->projects->map(function ($project) {
+
+
+                    return [
+                        'title' => $project->title,
+                        'start_date' => $project->start_date,
+                        'end_date' => $project->end_date,
+
+                        'description' => $project->description,
+                    ];
+                }),
+                'Certificate' => $objective->profile->certificates->map(function ($certificates) {
+                    return [
+                        'title' => $certificates->title,
+                        'provider' => $certificates->provider,
+                        'issueDate' => $certificates->issueDate,
+                        'description' => $certificates->description,
+                        'certificateUrl' => $certificates->certificateUrl,
+                    ];
+                }),
+                'WorkExperience' => $objective->profile->experiences->map(function ($experience) {
+                    return [
+                        'position' => $experience->position,
+                        'company' => $experience->company,
+                        'start_date' => $experience->start_date,
+                        'end_date' => $experience->end_date,
+                        'responsibilities' => $experience->responsibilities,
+                    ];
+                }),
+                'Award' => $objective->profile->awards->map(function ($awards) {
+                    return [
+                        'title' => $awards->title,
+                        'provider' => $awards->provider,
+                        'issueDate' => $awards->issueDate,
+                        'description' => $awards->description,
+                    ];
+                }),
+            ],
+        ];
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $candidateData,
+        ]);
+    }
+
 
 }

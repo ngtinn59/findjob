@@ -132,6 +132,9 @@ Route::get('/openapi.json', function () {
 Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
+Route::get('/workplaces', [WorkplacesController::class, 'index']);
+
+
 Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
@@ -226,6 +229,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('resume/objectives/search', [ObjectivesController::class, 'search']);
         Route::get('resume/objectives/search-keyword', [ObjectivesController::class, 'searchByKeyword']);
+        Route::get('resume/objectives/showCandidate/{id}', [ObjectivesController::class, 'showCandidate']);
 
         Route::post('employer/candidates/save/{id}', [CandidatesController::class, 'saveCandidate']);
         Route::delete('employer/candidates/un-save/{id}', [CandidatesController::class, 'unsaveCandidate']);
