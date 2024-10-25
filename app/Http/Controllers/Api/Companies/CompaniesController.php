@@ -26,43 +26,49 @@ class CompaniesController extends Controller
             $query->where('status', 1);
         }])->get();
 
-        // Map the company data as before
-        $companiesdata = $companies->map(function ($company) {
+        // Map the company data
+        $companiesData = $companies->map(function ($company) {
             $companyType = optional($company->companyType)->name;
             $companySize = optional($company->companySize)->name;
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
-            $skills = optional($company->skills)->name;
+            $district = optional($company->district)->name;
+
 
             return [
                 'id' => $company->id,
                 'country' => $country,
                 'city' => $city,
+                'district' => $district,
                 'companyType' => $companyType,
                 'companySize' => $companySize,
                 'name' => $company->company_name,
-                'phone' => $company->phone, // Thêm số điện thoại
-                'company_email' => $company->company_email, // Thêm email công ty
+                'phone' => $company->phone,
+                'company_email' => $company->company_email,
+                'tax_code' => $company->tax_code,
+                'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'), // Format date
                 'working_days' => $company->working_days,
                 'overtime_policy' => $company->overtime_policy,
-                'website' => $company->website, // Sửa đúng tên trường từ 'webstie' thành 'website'
-                'logo' => asset('uploads/images/' . $company->logo),
+                'website' => $company->website,
                 'facebook' => $company->facebook,
-                'tax_code' => $company->tax_code,
-                'date_of_establishment' => $company->date_of_establishment,
-                'banner' => $company->banner,
+                'youtube' => $company->youtube,
+                'linked' => $company->linked,
+                'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
+                'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
                 'address' => $company->address,
+                'latitude' => $company->latitude,
+                'longitude' => $company->longitude,
                 'description' => $company->description,
             ];
-
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'successfully.',
-            'data' => $companiesdata
+            'message' => 'Successfully retrieved companies.',
+            'data' => $companiesData
         ], 200);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -90,10 +96,10 @@ class CompaniesController extends Controller
         }
 
         $data = $request->only([
-            'company_size_id', 'company_type_id', 'company_name', 'working_days',
-            'overtime_policy', 'website', 'logo', 'facebook', 'description',
-            'address', 'banner', 'phone', 'company_email', 'tax_code',
-            'date_of_establishment',
+            'country_id', 'city_id', 'district_id', 'company_size_id',
+            'company_type_id', 'company_name', 'phone', 'tax_code', 'date_of_establishment',
+            'working_days', 'overtime_policy', 'website', 'facebook', 'youtube',
+            'linked', 'logo', 'banner', 'address', 'latitude', 'longitude', 'description'
         ]);
 
 
@@ -119,30 +125,37 @@ class CompaniesController extends Controller
             $company = Company::create($data);
         }
 
-        $companyType = optional($company->companytype)->name;
-        $companySize = optional($company->companysize)->name;
+        // Prepare the company data for the response
+        $companyType = optional($company->companyType)->name; // Ensure correct naming convention
+        $companySize = optional($company->companySize)->name; // Ensure correct naming convention
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
+        $district = optional($company->district)->name; // Corrected typo 'ditrist' to 'district'
 
         $companyData = [
             'id' => $company->id,
             'country' => $country,
             'city' => $city,
-            'companyType' => $companyType,
+            'district' => $district,
             'companySize' => $companySize,
-            'name' => $company->company_name, // Sử dụng 'company_name' thay vì 'name'
-            'working_days' => $company->working_days, // Chỉnh từ 'Working_days' thành 'working_days'
-            'overtime_policy' => $company->overtime_policy, // Chỉnh từ 'Overtime_policy' thành 'overtime_policy'
-            'website' => $company->website, // Chỉnh từ 'webstie' thành 'website'
-            'logo' => asset('uploads/images/' . $company->logo), // Đường dẫn đầy đủ tới logo
-            'banner' => asset('uploads/images/' . $company->banner), // Đường dẫn đầy đủ tới banner
+            'companyType' => $companyType,
+            'name' => $company->company_name,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'), // Format date
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
             'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
+            'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
             'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
             'description' => $company->description,
-            'phone' => $company->phone, // Thêm số điện thoại nếu có trong schema
-            'company_email' => $company->company_email, // Thêm email công ty
-            'tax_code' => $company->tax_code, // Thêm mã số thuế
-            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'),
         ];
 
 
@@ -172,37 +185,38 @@ class CompaniesController extends Controller
 
 
         // Build the detailed company data
-        $companyDetails = [
+        $companyData = [
             'id' => $company->id,
-            'name' => $company->company_name,
-            'company_type' => $companyType,
-            'company_size' => $companySize,
             'country' => $country,
             'city' => $city,
             'district' => $district,
+            'companySize' => $companySize,
+            'companyType' => $companyType,
+            'name' => $company->company_name,
             'phone' => $company->phone,
             'company_email' => $company->company_email,
             'tax_code' => $company->tax_code,
-            'date_of_establishment' => $company->date_of_establishment,
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'),
+
             'working_days' => $company->working_days,
             'overtime_policy' => $company->overtime_policy,
             'website' => $company->website,
             'facebook' => $company->facebook,
             'youtube' => $company->youtube,
             'linked' => $company->linked,
+            'logo' => asset('uploads/images/' . $company->logo), // Đường dẫn đầy đủ tới logo
+            'banner' => asset('uploads/images/' . $company->banner), // Đường dẫn đầy đủ tới banner
             'address' => $company->address,
             'latitude' => $company->latitude,
             'longitude' => $company->longitude,
             'description' => $company->description,
-            'logo' => asset('uploads/images/' . $company->logo),
-            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
         ];
 
         // Return the response with the company details
         return response()->json([
             'success' => true,
             'message' => 'Company details retrieved successfully.',
-            'data' => $companyDetails
+            'data' => $companyData
         ], 200);
     }
 
