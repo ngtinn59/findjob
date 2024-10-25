@@ -459,7 +459,7 @@ class ObjectivesController extends Controller
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
             'file' => asset('cvs/' . $objective->file),
-            'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
+            'status' => $objective->status,
             'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
             'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
             'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
@@ -504,7 +504,7 @@ class ObjectivesController extends Controller
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
                 'file' => asset('cvs/' . $objective->file),
-                'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
+                'status' => $objective->status,
                 'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
                 'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
                 'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
@@ -536,7 +536,7 @@ class ObjectivesController extends Controller
 
         // Validate dữ liệu
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:,3,4', // Các giá trị status có thể là  3, 4
+            'status' => 'required|in:,0,1', // Các giá trị status có thể là  3, 4
         ], [
             'status.required' => 'Vui lòng chọn trạng thái.',
             'status.in' => 'Trạng thái không hợp lệ.',
@@ -561,7 +561,7 @@ class ObjectivesController extends Controller
             'message' => 'Trạng thái đã được cập nhật thành công!',
             'data' => [
                 'id' => $objective->id,
-                'status' => ($objective->status == 3) ? 'hoạt động' : (($objective->status == 4) ? 'không hoạt động' : 'không xác định'),
+                'status' => $objective->status
             ],
             'status_code' => 200,
         ]);
