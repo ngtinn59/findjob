@@ -59,7 +59,7 @@ class JobsController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'last_date' => $job->last_date,
-                'status' => ($job->status == 3) ? 'Đã duyệt' : 'Chưa duyệt',
+                'status' => $job->status,
                 'applications_count' => $applicationsCount,
                 'views_count' => $viewsCount,
             ];
@@ -181,7 +181,7 @@ class JobsController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'last_date' => $job->last_date,
-                'status' => $statusText = ($job->status == 3) ? 'Đã duyệt' : (($job->status == 4) ? 'Chưa duyệt' : 'Trạng thái không xác định'),
+                'status' => $job->status,
             ],
             'status_code' => 201
         ], 201);
@@ -356,7 +356,7 @@ class JobsController extends Controller
                 'featured' => $job->featured,
                 'created_at' => $job->created_at->format('Y-m-d H:i:s'),
                 'last_date' => $job->last_date,
-                'status' => ($job->status == 3) ? 'Đã duyệt' : 'Chưa duyệt',
+                'status' => $job->status,
             ],
             'status_code' => 200
         ], 200);
@@ -594,7 +594,7 @@ class JobsController extends Controller
                         'id' => $job->id,
                         'title' => $job->title,
                         'featured' => $job->featured,
-                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
+                        'is_hot' => ($job->views > 100) ? 1 : 0,
                         'company' => $job->company->company_name,
                         'salary' => [
                             'salary_from' => $job->salary_from,
@@ -611,6 +611,7 @@ class JobsController extends Controller
             'total' => $results->total(),
         ]);
     }
+
 
     private function getSuggestedJobs()
     {
