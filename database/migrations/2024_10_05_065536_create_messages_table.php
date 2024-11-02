@@ -13,6 +13,7 @@ class CreateMessagesTable extends Migration
             $table->unsignedBigInteger('sender_id');
             $table->unsignedBigInteger('receiver_id');
             $table->text('message');
+            $table->string('file_path')->nullable(); // Thêm trường để lưu đường dẫn tệp
             $table->timestamps();
 
             $table->foreign('sender_id')->references('id')->on('users')->onDelete('cascade');

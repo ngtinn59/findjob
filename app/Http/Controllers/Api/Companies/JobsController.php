@@ -835,6 +835,7 @@ class JobsController extends Controller
                         'featured' => $job->featured,
                         'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
                         'company' => $job->company->company_name,
+                        'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to

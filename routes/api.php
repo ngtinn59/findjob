@@ -167,6 +167,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('messages', [MessageController::class, 'sendMessage']);
     Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
+    Route::get('messages', [MessageController::class, 'index']);
 
     Route::get('/list-jobs', [JobsController::class, 'indexShow']);
     Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);

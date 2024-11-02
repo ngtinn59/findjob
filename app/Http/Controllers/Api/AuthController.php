@@ -211,20 +211,20 @@ class AuthController extends Controller
             ], 404);
         }
 
-        $token = Str::random(60);
+        $otp = random_int(100000, 999999);
 
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
                 'email' => $request->email,
-                'token' => Hash::make($token),
+                'token' => Hash::make($otp),
                 'created_at' => now(),
             ]
         );
 
         // Send reset password email
         try {
-            Mail::send('emails.reset-password', ['token' => $token], function ($message) use ($request) {
+            Mail::send('emails.reset-password', ['token' => $otp], function ($message) use ($request) {
                 $message->to($request->email);
                 $message->subject('Thông báo đặt lại mật khẩu');
             });
@@ -247,7 +247,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'token' => 'required',
-            'password' => 'required|min:8|confirmed'], [
+            'password' => 'required|min:8'], [
             'email.required' => 'Vui lòng nhập email.',
             'email.email' => 'Email không hợp lệ.',
             'token.required' => 'Vui lòng nhập token.',
