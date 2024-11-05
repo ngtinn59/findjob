@@ -306,11 +306,11 @@ class ObjectivesController extends Controller
     {
         $keyword = $request->input('keyword'); // Từ khóa tìm kiếm
         $city_id = $request->input('city_id');
-
         $desired_level_id = $request->input('desired_level_id'); // ID
         $profession_id = $request->input('profession_id'); // ID
         $experience_level_id = $request->input('experience_level_id'); // ID
         $education_level_id = $request->input('education_level_id'); // ID
+        $perPage = $request->input('per_page', 10); // Số lượng kết quả mỗi trang (mặc định là 10)
 
         // Khởi tạo truy vấn
         $query = Objective::query()->where('status', 1);
@@ -319,48 +319,34 @@ class ObjectivesController extends Controller
         if ($keyword) {
             $query->where(function ($q) use ($keyword) {
                 $q->where('desired_position', 'like', "%$keyword%")
-                    ->orWhere('work_address', 'like', "%$keyword%"); // Giữ lại các trường cần thiết
+                    ->orWhere('work_address', 'like', "%$keyword%");
             });
         }
         if ($city_id) {
-            $query->where('city_id', $city_id); // Kiểm tra theo city_id
+            $query->where('city_id', $city_id);
         }
-        // Sử dụng ID thay vì name cho các điều kiện
         if ($desired_level_id) {
-            $query->where('desired_level_id', $desired_level_id); // Kiểm tra theo ID
+            $query->where('desired_level_id', $desired_level_id);
         }
-
         if ($profession_id) {
-            $query->where('profession_id', $profession_id); // Kiểm tra theo ID
+            $query->where('profession_id', $profession_id);
         }
-
         if ($experience_level_id) {
-            $query->where('experience_level_id', $experience_level_id); // Kiểm tra theo ID
+            $query->where('experience_level_id', $experience_level_id);
         }
-
         if ($education_level_id) {
-            $query->where('education_level_id', $education_level_id); // Kiểm tra theo ID
+            $query->where('education_level_id', $education_level_id);
         }
 
-
-
-        // Thực hiện truy vấn và lấy kết quả
-        $objectives = $query->get();
-        // Kiểm tra xem có ứng viên nào không
-        if ($objectives->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không có ứng viên nào phù hợp.',
-                'status_code' => 404,
-            ], 404);
-        }
+        // Thực hiện truy vấn và phân trang kết quả
+        $objectives = $query->paginate($perPage);
 
         // Chuyển đổi dữ liệu để trả về dưới dạng JSON
         $objectiveData = $objectives->map(function ($objective) {
             return [
                 'id' => $objective->id,
                 'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
-                'name' => $objective->profile->name  ?? null,
+                'name' => $objective->profile->name ?? null,
                 'desired_position' => $objective->desired_position,
                 'experience_level' => $objective->experienceLevel->name ?? null,
                 'salary_from' => $objective->salary_from,
@@ -371,13 +357,23 @@ class ObjectivesController extends Controller
             ];
         });
 
+        // Trả về dữ liệu với thông tin phân trang
         return response()->json([
             'success' => true,
             'message' => 'Dữ liệu được lấy thành công!',
             'data' => $objectiveData,
+            'pagination' => [
+                'current_page' => $objectives->currentPage(),
+                'last_page' => $objectives->lastPage(),
+                'total' => $objectives->total(),
+                'per_page' => $objectives->perPage(),
+                'next_page_url' => $objectives->nextPageUrl(),
+                'previous_page_url' => $objectives->previousPageUrl(),
+            ],
             'status_code' => 200,
         ]);
     }
+
 
 
 
@@ -571,7 +567,8 @@ class ObjectivesController extends Controller
     public function searchByKeyword(Request $request)
     {
         $keyword = $request->input('keyword');
-        $city_id = $request->input('city_id');  // Get city_id from the request
+        $city_id = $request->input('city_id'); // Get city_id from the request
+        $perPage = $request->input('per_page', 10); // Số lượng kết quả mỗi trang (mặc định là 10)
 
         // Khởi tạo truy vấn và lọc theo status = 1
         $query = Objective::query()->where('status', 1);
@@ -617,10 +614,10 @@ class ObjectivesController extends Controller
         }
 
         // Thêm truy vấn để lấy thông tin từ Profile
-        $query->with('profile');  // profile là tên quan hệ giữa Objective và Profile
+        $query->with('profile'); // profile là tên quan hệ giữa Objective và Profile
 
-        // Thực hiện truy vấn và lấy kết quả
-        $objectives = $query->get();
+        // Thực hiện truy vấn và phân trang kết quả
+        $objectives = $query->paginate($perPage);
 
         // Kiểm tra xem có ứng viên nào không
         if ($objectives->isEmpty()) {
@@ -636,7 +633,7 @@ class ObjectivesController extends Controller
             return [
                 'id' => $objective->id,
                 'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
-                'name' => $objective->profile->name  ?? null,
+                'name' => $objective->profile->name ?? null,
                 'desired_position' => $objective->desired_position,
                 'experience_level' => $objective->experienceLevel->name ?? null,
                 'salary_from' => $objective->salary_from,
@@ -647,11 +644,21 @@ class ObjectivesController extends Controller
             ];
         });
 
+        // Trả về dữ liệu với thông tin phân trang
         return response()->json([
             'success' => true,
             'data' => $objectiveData,
+            'pagination' => [
+                'current_page' => $objectives->currentPage(),
+                'last_page' => $objectives->lastPage(),
+                'total' => $objectives->total(),
+                'per_page' => $objectives->perPage(),
+                'next_page_url' => $objectives->nextPageUrl(),
+                'previous_page_url' => $objectives->previousPageUrl(),
+            ],
         ]);
     }
+
 
     public function showCandidate($id)
     {

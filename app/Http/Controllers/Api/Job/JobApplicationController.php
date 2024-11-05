@@ -41,12 +41,11 @@ class   JobApplicationController extends Controller
         // Lấy công ty đầu tiên của người dùng (nếu có nhiều công ty, điều này cần được điều chỉnh)
         $companyId = $user->companies->id;
 
-        // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại
+        // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại với phân trang
         $jobs = Job::with(['applicants' => function ($query) {
             // Bao gồm các trường trong bảng pivot
             $query->withPivot('status', 'cv', 'name', 'phone', 'email', 'created_at');
-        }])->where('company_id', $companyId)->get();
-
+        }])->where('company_id', $companyId)->paginate(10); // Số lượng công việc mỗi trang là 10
 
         // Chuyển đổi dữ liệu công việc và ứng viên
         $jobsData = $jobs->map(function ($job) {
@@ -79,9 +78,18 @@ class   JobApplicationController extends Controller
             'success' => true,
             'message' => 'Lấy dữ liệu thành công',
             'data' => $jobsData,
+            'pagination' => [
+                'current_page' => $jobs->currentPage(),
+                'last_page' => $jobs->lastPage(),
+                'total' => $jobs->total(),
+                'per_page' => $jobs->perPage(),
+                'next_page_url' => $jobs->nextPageUrl(),
+                'previous_page_url' => $jobs->previousPageUrl(),
+            ],
             'status_code' => 200
         ]);
     }
+
 
     /**
      * Show the form for creating a new resource.

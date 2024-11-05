@@ -606,9 +606,14 @@ class JobsController extends Controller
                 }),
                 'suggested_jobs' => $suggestedJobs,
             ],
-            'current_page' => $results->currentPage(),
-            'last_page' => $results->lastPage(),
-            'total' => $results->total(),
+            'pagination' => [
+                'current_page' => $results->currentPage(),
+                'last_page' => $results->lastPage(),
+                'total' => $results->total(),
+                'per_page' => $results->perPage(),
+                'next_page_url' => $results->nextPageUrl(), // URL để lấy trang tiếp theo
+                'previous_page_url' => $results->previousPageUrl(), // URL để lấy trang trước đó
+            ],
         ]);
     }
 

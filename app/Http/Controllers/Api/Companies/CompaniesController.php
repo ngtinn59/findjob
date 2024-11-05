@@ -341,10 +341,25 @@ class CompaniesController extends Controller
     }
 
 
-    public function indexShow(Request $request){
-        $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) {
-            $query->where('status', 1); // Lọc các công việc có trạng thái là 1
-        }])->get();        $companiesdata = $companies->map(function ($company) {
+    public function indexShow(Request $request)
+    {
+        // Lấy số lượng kết quả mỗi trang từ request, mặc định là 10
+        $perPage = $request->input('per_page', 10);
+
+        // Thực hiện truy vấn với phân trang
+        $companies = Company::with([
+            'companytype',
+            'companysize',
+            'country',
+            'city',
+            'jobs',
+            'skills' => function ($query) {
+                $query->where('status', 1); // Lọc các công việc có trạng thái là 1
+            }
+        ])->paginate($perPage); // Sử dụng phân trang với số lượng mỗi trang là $perPage
+
+        // Xử lý dữ liệu đầu ra
+        $companiesdata = $companies->map(function ($company) {
             $companyType = optional($company->companytype)->name;
             $companySize = optional($company->companysize)->name;
             $country = optional($company->country)->name;
@@ -353,10 +368,9 @@ class CompaniesController extends Controller
 
             return [
                 'id' => $company->id,
-                'name' => $company->company_name    ,
+                'name' => $company->company_name,
                 'companytype' => $companyType,
                 'companySize' => $companySize,
-
                 'logo' => asset('uploads/images/' . $company->logo),
                 'banner' => asset('uploads/images/' . $company->banner),
                 'country' => $country,
@@ -364,12 +378,23 @@ class CompaniesController extends Controller
                 'jobs' => $job->count(),
             ];
         });
+
+        // Trả về dữ liệu với thông tin phân trang
         return response()->json([
             'success' => true,
             'message' => 'successfully.',
-            'data' => $companiesdata
+            'data' => $companiesdata,
+            'pagination' => [
+                'current_page' => $companies->currentPage(),
+                'last_page' => $companies->lastPage(),
+                'total' => $companies->total(),
+                'per_page' => $companies->perPage(),
+                'next_page_url' => $companies->nextPageUrl(),
+                'previous_page_url' => $companies->previousPageUrl(),
+            ]
         ], 200);
     }
+
 
 
     public function detailShow(Company $company)
