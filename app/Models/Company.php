@@ -60,6 +60,10 @@ class Company extends Model
     }
 
 
+    public function User()
+    {
+        return $this->hasOne( User::class,'id','users_id');
+    }
 
     public function skills() {
         return  $this->hasOne(Companyskill::class,'company_id','id');

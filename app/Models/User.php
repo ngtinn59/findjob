@@ -55,10 +55,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
 
-    public function company_reviews()
-    {
-        return $this->hasMany(company_reviews::class,'users_id','id');
-    }
 
     public function profile()
     {

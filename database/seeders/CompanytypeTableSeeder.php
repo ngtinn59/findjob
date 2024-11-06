@@ -17,8 +17,8 @@ class CompanytypeTableSeeder extends Seeder
             ['name' => 'IT Outsourcing'],
             ['name' => 'IT Product'],
             ['name' => 'Headhunt'],
-           ['name' => 'IT Service and IT Consulting'],
-           ['name' => 'Non-IT'],
+            ['name' => 'IT Service and IT Consulting'],
+            ['name' => 'Non-IT'],
        ];
 
         DB::table('company_types')->insert($company_types);

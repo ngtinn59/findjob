@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Job;
 
+use App\Events\ApplicationStatusUpdated;
 use App\Mail\ApplicationApproved;
 use App\Mail\ApplicationContacted;
 use App\Mail\ApplicationTestRound;
@@ -292,11 +293,11 @@ class   JobApplicationController extends Controller
 
         // Update the status of the application in the pivot table
         $job->users()->updateExistingPivot($userId, ['status' => $status]);
+
         Mail::to($email)->send(new ApplicationApproved($job, $name, $status));
         $applicant->notify(new ApplicationStatusNotification($job, $status));
-
-
-
+        $notification = $applicant->notifications()->latest()->first();
+        broadcast(new ApplicationStatusUpdated($jobId, $userId, $status, $name, $notification,$job))->toOthers();
 
         // Fetch updated job data
         $job = Job::with(['applicants' => function ($query) {

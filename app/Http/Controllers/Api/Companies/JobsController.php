@@ -709,15 +709,10 @@ class JobsController extends Controller
 
         $customData = $notifications->map(function ($notification) {
             return [
+                'notification_id' => $notification->id,
                 'job_id' => $notification->data['job_id'],
                 'job_title' => $notification->data['job_title'],
-                'user_id' => $notification->data['user_id'],
                 'user_name' => $notification->data['user_name'],
-                'applicant_name' => $notification->data['applicant_name'],
-                'applicant_phone' => $notification->data['applicant_phone'],
-                'applicant_email' => $notification->data['applicant_email'],
-
-                'notification_id' => $notification->id,
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
             ];
@@ -735,7 +730,7 @@ class JobsController extends Controller
     public function markAsRead(Request $request)
     {
         $user = auth()->user();
-        $companyId =  $user->companies->id;
+        $companyId = $user->companies->id;
 
         // Tìm công ty dựa trên ID
         $company = Company::find($companyId);
@@ -745,6 +740,7 @@ class JobsController extends Controller
 
         // Lấy thông báo cụ thể nếu có ID được gửi lên
         $notificationId = $request->input('notification_id');
+        $customData = null;
 
         if ($notificationId) {
             // Tìm thông báo dựa trên ID
@@ -756,17 +752,42 @@ class JobsController extends Controller
 
             // Đánh dấu thông báo này là đã đọc
             $notification->markAsRead();
+
+            // Tùy chỉnh dữ liệu thông báo
+            $customData = [
+                'notification_id' => $notification->id,
+                'job_id' => $notification->data['job_id'],
+                'job_title' => $notification->data['job_title'],
+                'user_name' => $notification->data['user_name'],
+                'read_at' => $notification->read_at,
+                'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
+            ];
         } else {
             // Đánh dấu tất cả thông báo là đã đọc nếu không có ID nào được gửi lên
-            $company->notifications()->whereNull('read_at')->get()->markAsRead();
+            $unreadNotifications = $company->notifications()->whereNull('read_at')->get();
+            $unreadNotifications->markAsRead();
+
+            // Tùy chỉnh dữ liệu cho tất cả thông báo vừa đánh dấu là đã đọc
+            $customData = $unreadNotifications->map(function ($notification) {
+                return [
+                    'notification_id' => $notification->id,
+                    'job_id' => $notification->data['job_id'],
+                    'job_title' => $notification->data['job_title'],
+                    'user_name' => $notification->data['user_name'],
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Đánh dấu thông báo đã đọc thành công',
+            'data' => $customData,
             'status_code' => 200
         ]);
     }
+
 
 
     public function applicant()

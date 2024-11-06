@@ -378,8 +378,8 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully',
-            'status_code' => 204
-        ], 204);
+            'message' => 'Xóa tài khoản thành công',
+            'status_code' => 200
+        ], 200);
     }
 }

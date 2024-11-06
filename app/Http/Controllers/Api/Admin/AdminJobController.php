@@ -130,7 +130,7 @@ class AdminJobController extends Controller
     public function index()
     {
         // Lấy danh sách tất cả công việc từ tất cả các công ty
-        $jobs = \App\Models\Job::paginate(10); // Phân trang, mỗi trang 10 công việc
+        $jobs = \App\Models\Job::all(); // Retrieve all jobs without pagination
 
         // Map dữ liệu công việc
         $jobsData = $jobs->map(function ($job) {
@@ -151,12 +151,6 @@ class AdminJobController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => $jobsData,
-            'links' => [
-                'first' => $jobs->url(1),
-                'last' => $jobs->url($jobs->lastPage()),
-                'prev' => $jobs->previousPageUrl(),
-                'next' => $jobs->nextPageUrl(),
-            ],
             'status_code' => 200
         ]);
     }
