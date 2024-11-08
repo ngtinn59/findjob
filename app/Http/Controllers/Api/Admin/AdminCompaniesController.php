@@ -153,5 +153,16 @@ class AdminCompaniesController extends Controller
         ], 200);
     }
 
+    public function destroy(Company $company)
+    {
+        $company->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Company deleted successfully.',
+            'status_code' => 200
+        ]);
+
+    }
+
 
 }

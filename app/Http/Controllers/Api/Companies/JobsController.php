@@ -640,7 +640,8 @@ class JobsController extends Controller
         }
 
         // Tìm kiếm các công việc dựa trên các tiêu chí trong objectives
-        $jobs = Job::query();
+        $jobs = Job::query()
+            ->where('status', 1);
 
         foreach ($objectives as $objective) {
             // Lọc theo vị trí mong muốn

@@ -293,6 +293,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('/companies', AdminCompaniesController::class);
         // Lấy danh sách công ty
         Route::get('companies', [AdminCompaniesController::class, 'index']);
+        Route::delete('companies', [AdminCompaniesController::class, 'destroy']);
 
         // Đánh dấu công ty là nổi bật
         Route::post('companies/{companyId}/mark-as-hot', [AdminCompaniesController::class, 'markAsHot']);
