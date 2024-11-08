@@ -133,6 +133,7 @@ Route::get('/countries', [CountriesController::class, 'index']);
 Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
 Route::get('/workplaces', [WorkplacesController::class, 'index']);
+Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
 
 
 Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
@@ -275,6 +276,7 @@ Route::middleware('auth:sanctum')->group(function () {
         //Thống kê
 
         Route::get('/statistics', [AdminStatsController::class, 'index']);
+        Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
 
         Route::resource('/languages', LanguagesController::class);
 
