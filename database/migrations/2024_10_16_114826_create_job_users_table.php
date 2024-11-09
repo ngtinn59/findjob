@@ -15,7 +15,19 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('job_id')->constrained()->cascadeOnDelete();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string("name");
+            $table->string("email");
+            $table->string("phone");
+            $table->enum('status', [
+                'pending',      // Đang chờ
+                'contacted',    // Đã liên hệ
+                'test_round',   // Vòng test
+                'interview',    // Vòng phỏng vấn
+                'hired',        // Trúng tuyển
+                'not_selected'  // Không đúng tuyển
+            ])->default('pending');
+            $table->softDeletes();  // Thêm cột soft delete
+
             $table->timestamps();
         });
     }

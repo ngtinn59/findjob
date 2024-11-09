@@ -3,34 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đơn Ứng Tuyển Đã Được Chấp Nhận</title>
+    <title>Cập nhật thông tin trúng tuyển</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+            margin-top: 0;
+            font-size: 28px;
+        }
+        p {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        strong {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        .signature {
+            margin-top: 30px;
+            font-style: italic;
+            color: #7f8c8d;
+            text-align: right;
+        }
+        .highlight {
+            background-color: #f1c40f;
+            color: #34495e;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
-<body style="font-family: 'Arial', sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0;">
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
-    <tr>
-        <td style="padding: 20px 0;">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                <tr>
-                    <td style="padding: 40px 30px; text-align: center; background-color: #4CAF50; border-radius: 8px 8px 0 0;">
-                        <h1 style="color: #ffffff; font-size: 28px; margin: 0;">Đơn Ứng Tuyển Đã Được Chấp Nhận!</h1>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 40px 30px;">
-                        <p style="font-size: 18px; margin-bottom: 20px;">Xin chúc mừng!</p>
-                        <p style="font-size: 16px; margin-bottom: 20px;">Đơn ứng tuyển của bạn đã được chấp nhận. Chúng tôi rất hào hứng chào đón bạn vào đội ngũ của chúng tôi.</p>
-                        <p style="font-size: 16px; margin-bottom: 30px;">Hãy chuẩn bị cho một hành trình tuyệt vời phía trước!</p>
-                        <a href="#" style="display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px;">Xem Chi Tiết</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 30px; background-color: #f8f8f8; border-radius: 0 0 8px 8px; text-align: center;">
-                        <p style="margin: 0; font-size: 14px; color: #888888;">© 2024 Công Ty Của Bạn. Tất cả các quyền được bảo lưu.</p>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
+<body>
+<div class="container">
+    <h1>Chúc mừng, <span class="highlight">{{ $applicantName }}</span>!</h1>
+    <p>Chúng tôi xin thông báo rằng đơn ứng tuyển của bạn cho vị trí <strong>{{ $jobTitle }}</strong> đã được phê duyệt!</p>
+    <p>Bạn sẽ nhận được thông tin chi tiết và các bước tiếp theo từ nhà tuyển dụng trong thời gian sớm nhất.</p>
+    <p>Chúng tôi rất mong chờ việc bạn sẽ gia nhập đội ngũ của chúng tôi!</p>
+    <p>Trân trọng,</p>
+    <p class="signature">Đội ngũ quản lý công việc</p>
+</div>
 </body>
 </html>

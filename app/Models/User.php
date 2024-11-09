@@ -55,10 +55,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
 
-    public function company_reviews()
-    {
-        return $this->hasMany(company_reviews::class,'users_id','id');
-    }
 
     public function profile()
     {
@@ -80,6 +76,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function checkSaved(){
         return DB::table('favorites')->where('users_id', auth()->user()->id)->where('job_id', $this->id)->exists();
+    }
+
+    public function savedCandidates()
+    {
+        return $this->belongsToMany(Objective::class, 'favorites_candidates', 'user_id', 'objective_id')->withTimestamps();
     }
 
     public function job(){

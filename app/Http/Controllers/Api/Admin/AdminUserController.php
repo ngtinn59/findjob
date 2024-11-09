@@ -26,14 +26,40 @@ class AdminUserController extends Controller
             ], 404);
         }
 
+        // Update user's status to inactive
         $user->update(['status' => Constant::user_status_inactive]);
+        $accountTypeLabels = [
+            Constant::user_level_developer => 'Người tìm việc',
+            Constant::user_level_employer => 'Người tuyển dụng',
+            Constant::user_level_host => 'Admin'
+        ];
+
+        // Ánh xạ giá trị status
+        $accountTypeStatus = [
+            Constant::user_status_active => 'Hoạt động',
+            Constant::user_status_inactive => 'Không hoạt động'
+        ];
+
+        // Formatted user data
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at ? $user->email_verified_at->format('d-m-Y H:i:s') : null,
+            'account_type' => $accountTypeLabels[$user->account_type] ?? 'Không xác định',
+            'status' => $accountTypeStatus[$user->status] ?? 'Không xác định',
+            'created_at' => $user->created_at->format('d-m-Y H:i:s'),
+            'updated_at' => $user->updated_at->format('d-m-Y H:i:s'),
+        ];
 
         return response()->json([
             'success' => true,
             'message' => 'Tài khoản đã bị chặn thành công',
+            'user' => $userData,
             'status_code' => 200
         ], 200);
     }
+
 
     public function unblockUser($userId)
     {
@@ -47,14 +73,40 @@ class AdminUserController extends Controller
             ], 404);
         }
 
+        // Update user's status to active
         $user->update(['status' => Constant::user_status_active]);
+        $accountTypeLabels = [
+            Constant::user_level_developer => 'Người tìm việc',
+            Constant::user_level_employer => 'Người tuyển dụng',
+            Constant::user_level_host => 'Admin'
+        ];
+
+        // Ánh xạ giá trị status
+        $accountTypeStatus = [
+            Constant::user_status_active => 'Hoạt động',
+            Constant::user_status_inactive => 'Không hoạt động'
+        ];
+
+        // Formatted user data
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at ? $user->email_verified_at->format('d-m-Y H:i:s') : null,
+            'account_type' => $accountTypeLabels[$user->account_type] ?? 'Không xác định',
+            'status' => $accountTypeStatus[$user->status] ?? 'Không xác định',
+            'created_at' => $user->created_at->format('d-m-Y H:i:s'),
+            'updated_at' => $user->updated_at->format('d-m-Y H:i:s'),
+        ];
 
         return response()->json([
             'success' => true,
             'message' => 'Tài khoản đã được mở lại thành công',
+            'user' => $userData,
             'status_code' => 200
         ], 200);
     }
+
 
     public function index()
     {
@@ -77,10 +129,11 @@ class AdminUserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at ? $user->email_verified_at->format('d-m-Y H:i:s') : null, // Formatted date
                 'account_type' => $accountTypeLabels[$user->account_type] ?? 'Không xác định', // Sử dụng ánh xạ cho account_type
                 'status' => $accountTypeStatus[$user->status] ?? 'Không xác định', // Sử dụng ánh xạ cho status
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at
+                'created_at' => $user->created_at->format('d-m-Y H:i:s'), // Formatted date
+                'updated_at' => $user->updated_at->format('d-m-Y H:i:s'), // Formatted date
             ];
         });
 
@@ -99,7 +152,7 @@ class AdminUserController extends Controller
     // Create a new user
     public function store(Request $request)
     {
-        // Validation với thông báo tiếng Việt
+        // Validation messages in Vietnamese
         $messages = [
             'name.required' => 'Tên là bắt buộc.',
             'name.string' => 'Tên phải là chuỗi ký tự.',
@@ -123,16 +176,15 @@ class AdminUserController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message'=>'Lỗi tạo tài khoản',
+                'message' => 'Lỗi tạo tài khoản',
                 'errors' => $validator->errors(),
                 'status_code' => 422
-            ],
-                422);
+            ], 422);
         }
 
         DB::beginTransaction();
         try {
-            // Tạo user mới với dữ liệu từ request
+            // Create a new user with request data
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -142,7 +194,7 @@ class AdminUserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            // Tạo profile cho user
+            // Create profile for the user
             Profile::create([
                 'users_id' => $user->id,
                 'name' => $request->name,
@@ -151,10 +203,20 @@ class AdminUserController extends Controller
 
             DB::commit();
 
+            // Custom data structure for response
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'account_type' => 'Người tìm việc',
+                'status' => 'Hoạt động',
+                'created_at' => $user->created_at,
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Đăng ký thành công. Vui lòng xác minh email của bạn.',
-                'user' => $user,
+                'data' => $userData,
                 'status_code' => 200,
             ]);
         } catch (\Exception $e) {
@@ -169,10 +231,12 @@ class AdminUserController extends Controller
         }
     }
 
+
     // View user details
     public function show($id)
     {
         $user = User::find($id);
+
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -180,13 +244,39 @@ class AdminUserController extends Controller
                 'status_code' => 404
             ], 404);
         }
+
+        // Account type and status mappings
+        $accountTypeLabels = [
+            Constant::user_level_developer => 'Người tìm việc',
+            Constant::user_level_employer => 'Người tuyển dụng',
+            Constant::user_level_host => 'Admin'
+        ];
+
+        $accountTypeStatus = [
+            Constant::user_status_active => 'Hoạt động',
+            Constant::user_status_inactive => 'Không hoạt động'
+        ];
+
+        // Custom user data structure
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at ? $user->email_verified_at->format('d-m-Y H:i:s') : null, // Formatted date
+            'account_type' => $accountTypeLabels[$user->account_type] ?? 'Không xác định', // Sử dụng ánh xạ cho account_type
+            'status' => $accountTypeStatus[$user->status] ?? 'Không xác định', // Sử dụng ánh xạ cho status
+            'created_at' => $user->created_at->format('d-m-Y H:i:s'), // Formatted date
+            'updated_at' => $user->updated_at->format('d-m-Y H:i:s'), // Formatted date
+        ];
+
         return response()->json([
             'success' => true,
             'message' => 'Lấy thông tin tài khoản thành công',
-            'data' => $user,
+            'data' => $userData,
             'status_code' => 200
         ], 200);
     }
+
 
     // Update user information
     public function update(Request $request, $id)
@@ -200,7 +290,7 @@ class AdminUserController extends Controller
             ], 404);
         }
 
-        // Validation với thông báo tiếng Việt
+        // Validation messages in Vietnamese
         $messages = [
             'name.required' => 'Tên là bắt buộc.',
             'name.string' => 'Tên phải là chuỗi ký tự.',
@@ -232,19 +322,31 @@ class AdminUserController extends Controller
 
         DB::beginTransaction();
         try {
-            // Cập nhật thông tin user
+            // Update user information
             $user->update([
                 'name' => $request->name ?? $user->name,
                 'email' => $request->email ?? $user->email,
                 'password' => $request->password ? Hash::make($request->password) : $user->password,
             ]);
 
+            // Formatted user data
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at ? $user->email_verified_at->format('d-m-Y H:i:s') : null,
+                'account_type' => $accountTypeLabels[$user->account_type] ?? 'Không xác định',
+                'status' => $accountTypeStatus[$user->status] ?? 'Không xác định',
+                'created_at' => $user->created_at->format('d-m-Y H:i:s'),
+                'updated_at' => $user->updated_at->format('d-m-Y H:i:s'),
+            ];
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật tài khoản thành công',
-                'user' => $user,
+                'user' => $userData,
                 'status_code' => 200,
             ]);
         } catch (\Exception $e) {
@@ -258,6 +360,7 @@ class AdminUserController extends Controller
             ], 500);
         }
     }
+
 
     // Delete a user
     public function destroy($id)
@@ -275,8 +378,8 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully',
-            'status_code' => 204
-        ], 204);
+            'message' => 'Xóa tài khoản thành công',
+            'status_code' => 200
+        ], 200);
     }
 }

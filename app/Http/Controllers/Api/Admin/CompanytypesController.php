@@ -58,6 +58,7 @@ class CompanytypesController extends Controller
      */
     public function show(Companytype $companytype)
     {
+
         return response()->json([
             'success' => true,
             'message' => 'success',

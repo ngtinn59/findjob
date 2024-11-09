@@ -16,16 +16,14 @@
         <td style="padding: 40px 30px;">
             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Xin chào,</p>
             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
-            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 30px;">Để đặt lại mật khẩu, vui lòng nhấp vào nút bên dưới:</p>
+            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 30px;">Mã code đặt lại mật khẩu:</p>
             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                     <td align="center">
-                        <a href="{{ url('/reset-password?token=' . $token) }}" style="display: inline-block; padding: 14px 30px; background-color: #ffffff; color: #333333; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 4px; border: 2px solid #333333; transition: background-color 0.3s ease, color 0.3s ease;">Đặt Lại Mật Khẩu</a>
+                        <a href="" style="display: inline-block; padding: 14px 30px; background-color: #ffffff; color: #333333; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 4px; border: 2px solid #333333; transition: background-color 0.3s ease, color 0.3s ease;">{{$token}}</a>
                     </td>
                 </tr>
             </table>
-            <p style="color: #666666; font-size: 14px; line-height: 1.5; margin-top: 30px;">Nếu bạn gặp vấn đề với nút trên, vui lòng sao chép và dán liên kết sau vào trình duyệt của bạn:</p>
-            <p style="color: #333333; font-size: 14px; line-height: 1.5; word-break: break-all;">{{ url('/reset-password?token=' . $token) }}</p>
             <p style="color: #666666; font-size: 14px; line-height: 1.5; margin-top: 30px;">Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
         </td>
     </tr>

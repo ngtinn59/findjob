@@ -13,14 +13,25 @@ class Cors
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle($request, Closure $next) {
+    public function handle($request, Closure $next)
+    {
+        // Handle preflight request (OPTIONS)
+        if ($request->getMethod() === 'OPTIONS') {
+            return response()
+                ->json(['status' => 'CORS Preflight OK'], 200)
+                ->header('Access-Control-Allow-Origin', '*')
+                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                ->header('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token, Authorization, X-Requested-With')
+                ->header('Access-Control-Allow-Credentials', 'true');
+        }
+
+        // Handle actual requests
         $response = $next($request);
 
-        $response->headers->set('Access-Control-Allow-Origin', 'http://localhost:5173');
-        $response->headers->set('Access-Control-Allow-Methods', '*');
-        $response->headers->set('Access-Control-Allow-Headers', '*');
+        $response->headers->set('Access-Control-Allow-Origin', '*'); // Adjust origin if necessary
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token, Authorization, X-Requested-With');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
-
 
         return $response;
     }

@@ -108,4 +108,16 @@ class CitiesController extends Controller
         $city->delete();
 
     }
+
+    public function getCitiesByCountry($countryId)
+    {
+        $cities = City::where('country_id', $countryId)->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $cities,
+            'status_code' => 200
+        ]);
+    }
+
 }

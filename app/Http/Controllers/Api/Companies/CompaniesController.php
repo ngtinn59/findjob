@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\aboutme;
 use App\Models\Company;
 use App\Models\Country;
-use App\Models\Location;
-use App\Models\Location_Comapny;
 use App\Models\Profile;
 use App\Models\User;
 use App\Utillities\Common;
@@ -24,41 +22,53 @@ class CompaniesController extends Controller
         $user = auth()->user();
 
         // Retrieve companies associated with the user
-        $companies = $user->companies()->with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
+        $companies = $user->companies()->with(['companyType', 'companySize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
             $query->where('status', 1);
         }])->get();
 
-        // Map the company data as before
-        $companiesdata = $companies->map(function ($company) {
-            $companyType = optional($company->companytype)->name;
-            $companySize = optional($company->companysize)->name;
+        // Map the company data
+        $companiesData = $companies->map(function ($company) {
+            $companyType = optional($company->companyType)->name;
+            $companySize = optional($company->companySize)->name;
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
-            $skills = optional($company->skills)->name;
+            $district = optional($company->district)->name;
+
 
             return [
                 'id' => $company->id,
                 'country' => $country,
                 'city' => $city,
+                'district' => $district,
                 'companyType' => $companyType,
                 'companySize' => $companySize,
-                'name' => $company->name,
-                'Working_days' => $company->Working_days,
-                'Overtime_policy' => $company->Overtime_policy,
-                'webstie' => $company->webstie,
-                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+                'name' => $company->company_name,
+                'phone' => $company->phone,
+                'company_email' => $company->company_email,
+                'tax_code' => $company->tax_code,
+                'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'), // Format date
+                'working_days' => $company->working_days,
+                'overtime_policy' => $company->overtime_policy,
+                'website' => $company->website,
                 'facebook' => $company->facebook,
+                'youtube' => $company->youtube,
+                'linked' => $company->linked,
+                'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
+                'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
                 'address' => $company->address,
+                'latitude' => $company->latitude,
+                'longitude' => $company->longitude,
                 'description' => $company->description,
             ];
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'successfully.',
-            'data' => $companiesdata
+            'message' => 'Successfully retrieved companies.',
+            'data' => $companiesData
         ], 200);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -86,9 +96,12 @@ class CompaniesController extends Controller
         }
 
         $data = $request->only([
-            'company_size_id', 'company_type_id', 'name', 'Working_days',
-            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description', 'address','banner'
+            'country_id', 'city_id', 'district_id', 'company_size_id',
+            'company_type_id', 'company_name', 'phone', 'tax_code', 'date_of_establishment',
+            'working_days', 'overtime_policy', 'website', 'facebook', 'youtube',
+            'linked', 'logo', 'banner', 'address', 'latitude', 'longitude', 'description'
         ]);
+
 
         // Upload logo
         $file = $request->file('logo');
@@ -112,32 +125,44 @@ class CompaniesController extends Controller
             $company = Company::create($data);
         }
 
-        $companyType = optional($company->companytype)->name;
-        $companySize = optional($company->companysize)->name;
+        // Prepare the company data for the response
+        $companyType = optional($company->companyType)->name; // Ensure correct naming convention
+        $companySize = optional($company->companySize)->name; // Ensure correct naming convention
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
+        $district = optional($company->district)->name; // Corrected typo 'ditrist' to 'district'
 
-        $comapyData = [
+        $companyData = [
             'id' => $company->id,
             'country' => $country,
             'city' => $city,
-            'companyType' => $companyType,
+            'district' => $district,
             'companySize' => $companySize,
-            'name' => $company->name,
-            'Working_days' => $company->Working_days,
-            'Overtime_policy' => $company->Overtime_policy,
-            'webstie' => $company->webstie,
-            'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
-            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
+            'companyType' => $companyType,
+            'name' => $company->company_name,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'), // Format date
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
             'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
+            'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
             'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
             'description' => $company->description,
         ];
+
 
         return response()->json([
             'success'   => true,
             'message'   => "success update",
-            "data" => $comapyData,
+            "data" => $companyData,
             'status_code'    => 200
         ]);
     }
@@ -149,38 +174,49 @@ class CompaniesController extends Controller
      */
     public function show(Company $company)
     {
-        // Eager load the relationships to avoid N+1 problem
-        $company->load(['companytype', 'companysize', 'country', 'city']);
 
+        $company->load(['companyType', 'companySize', 'country', 'city', 'district']);
         // Use optional to avoid trying to get properties on a null object
-        $companyType = optional($company->companytype)->name;
-        $companySize = optional($company->companysize)->name;
+        $companyType = optional($company->companyType)->name;
+        $companySize = optional($company->companySize)->name;
         $country = optional($company->country)->name;
         $city = optional($company->city)->name;
+        $district = optional($company->district)->name;
+
 
         // Build the detailed company data
-        $companyDetails = [
+        $companyData = [
             'id' => $company->id,
-            'name' => $company->name,
-            'company_type' => $companyType,
-            'company_size' => $companySize,
             'country' => $country,
             'city' => $city,
-            'Working_days' => $company->Working_days,
-            'Overtime_policy' => $company->Overtime_policy,
-            'webstie' => $company->webstie,
-            'logo' => asset('uploads/images/' . $company->logo),
-            'banner' => asset('uploads/images/' . $company->banner), // Assuming the logo is stored in the 'storage' folder
+            'district' => $district,
+            'companySize' => $companySize,
+            'companyType' => $companyType,
+            'name' => $company->company_name,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'),
+
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
             'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'logo' => asset('uploads/images/' . $company->logo), // Đường dẫn đầy đủ tới logo
+            'banner' => asset('uploads/images/' . $company->banner), // Đường dẫn đầy đủ tới banner
+            'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
             'description' => $company->description,
-            'address' => $company->address
         ];
 
         // Return the response with the company details
         return response()->json([
             'success' => true,
             'message' => 'Company details retrieved successfully.',
-            'data' => $companyDetails
+            'data' => $companyData
         ], 200);
     }
 
@@ -305,10 +341,25 @@ class CompaniesController extends Controller
     }
 
 
-    public function indexShow(Request $request){
-        $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) {
-            $query->where('status', 1); // Lọc các công việc có trạng thái là 1
-        }])->get();        $companiesdata = $companies->map(function ($company) {
+    public function indexShow(Request $request)
+    {
+        // Lấy số lượng kết quả mỗi trang từ request, mặc định là 10
+        $perPage = $request->input('per_page', 10);
+
+        // Thực hiện truy vấn với phân trang
+        $companies = Company::with([
+            'companytype',
+            'companysize',
+            'country',
+            'city',
+            'jobs',
+            'skills' => function ($query) {
+                $query->where('status', 1); // Lọc các công việc có trạng thái là 1
+            }
+        ])->paginate($perPage); // Sử dụng phân trang với số lượng mỗi trang là $perPage
+
+        // Xử lý dữ liệu đầu ra
+        $companiesdata = $companies->map(function ($company) {
             $companyType = optional($company->companytype)->name;
             $companySize = optional($company->companysize)->name;
             $country = optional($company->country)->name;
@@ -317,17 +368,125 @@ class CompaniesController extends Controller
 
             return [
                 'id' => $company->id,
-                'name' => $company->name,
+                'name' => $company->company_name,
+                'companytype' => $companyType,
+                'companySize' => $companySize,
+                'logo' => asset('uploads/images/' . $company->logo),
+                'banner' => asset('uploads/images/' . $company->banner),
                 'country' => $country,
                 'city' => $city,
-                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
                 'jobs' => $job->count(),
             ];
         });
+
+        // Trả về dữ liệu với thông tin phân trang
         return response()->json([
             'success' => true,
             'message' => 'successfully.',
-            'data' => $companiesdata
+            'data' => $companiesdata,
+            'pagination' => [
+                'current_page' => $companies->currentPage(),
+                'last_page' => $companies->lastPage(),
+                'total' => $companies->total(),
+                'per_page' => $companies->perPage(),
+                'next_page_url' => $companies->nextPageUrl(),
+                'previous_page_url' => $companies->previousPageUrl(),
+            ]
         ], 200);
     }
+
+
+
+    public function detailShow(Company $company)
+    {
+        // Tải thông tin chi tiết của công ty bao gồm các quan hệ
+        $company->load(['companytype', 'companysize', 'country', 'city', 'district', 'jobs']);
+        // Sử dụng optional để tránh lỗi khi đối tượng null
+        $companyType = optional($company->companyType)->name;
+        $companySize = optional($company->companySize)->name;
+        $country = optional($company->country)->name;
+        $city = optional($company->city)->name;
+        $district = optional($company->district)->name;
+
+        // Đếm số lượng công việc của công ty
+        $jobsWithStatusActive = $company->jobs()->where('status', 1)->get()->map(function($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'featured' => $job->featured,
+                'is_hot' => ($job->views > 100) ? 1 : 0,
+                'company' => $job->company->company_name,
+                'salary' => [
+                    'salary_from' => $job->salary_from,
+                    'salary_to' => $job->salary_to
+                ],
+                'city' => $job->city->name,
+                'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
+            ];
+        });        // Tạo dữ liệu chi tiết công ty
+        $companyDetails = [
+            'id' => $company->id,
+            'name' => $company->company_name,
+            'company_type' => $companyType,
+            'company_size' => $companySize,
+            'country' => $country,
+            'city' => $city,
+            'district' => $district,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => $company->date_of_establishment,
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
+            'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
+            'description' => $company->description,
+            'is_hot' => $company->is_hot,
+            'logo' => asset('uploads/images/' . $company->logo),
+            'banner' => asset('uploads/images/' . $company->banner),
+            'jobs' => $jobsWithStatusActive,
+
+        ];
+
+        // Trả về thông tin công ty và số lượng công việc
+        return response()->json([
+            'success' => true,
+            'message' => 'Company details retrieved successfully.',
+            'data' => $companyDetails
+        ], 200);
+    }
+
+    public function indexFeaturedCompanies(Request $request)
+    {
+        $companies = Company::where('is_hot', 1);
+
+        $results = $companies->with(['city'])
+        ->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'featured_companies' => $results->map(function ($company) {
+                    return [
+                        'id' => $company->id,
+                        'company_name' => $company->company_name,
+                        'logo' => asset('uploads/images/' . $company->logo),
+                        'is_hot' => $company->is_hot,
+                        'city' => $company->city->name,
+                        'created_at' => \Carbon\Carbon::parse($company->created_at)->format('d-m-Y'),
+                    ];
+                }),
+            ],
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+            'total' => $results->total(),
+        ]);
+    }
+
 }
+

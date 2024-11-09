@@ -57,11 +57,12 @@ class ProjectsController extends Controller
             'description' => $request->input('description'),
             'profiles_id' => $profile_id
         ];
+
         // Xác thực dữ liệu
         $validator = Validator::make($data, [
             'title' => 'required',
-            'start_date' => 'required|date', // Thêm kiểm tra định dạng ngày
-            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
             'description' => 'required',
             'profiles_id' => 'required',
         ], [
@@ -84,16 +85,25 @@ class ProjectsController extends Controller
         }
 
         $data = $validator->validated();
-        $projects = Project::create($data);
+        $project = Project::create($data);
+
+        // Format the response similar to the index method
+        $projectData = [
+            'id' => $project->id,
+            'title' => $project->title,
+            'start_date' => $project->start_date,
+            'end_date' => $project->end_date,
+            'description' => $project->description,
+        ];
 
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $projects,
+            "data" => $projectData,
             'status_code' => 200
         ]);
-
     }
+
 
     /**
      * Display the specified resource.

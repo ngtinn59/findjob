@@ -9,11 +9,9 @@ class Message extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'sender_id',
-        'receiver_id',
-        'message',
-    ];
+    protected $table = 'messages';
+    protected $primaryKey = 'id';
+    protected $guarded = [];
 
     public function sender()
     {

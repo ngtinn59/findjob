@@ -5,16 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Companysize extends Model
+class Profession extends Model
 {
     use HasFactory;
-    protected $table = 'company_sizes';
 
+    protected $table = 'professions';
     protected $primaryKey = 'id';
     protected $guarded = [];
-
-    public function company()
-    {
-        return $this->hasOne(Company::class,'company_size_id','id');
-    }
 }
