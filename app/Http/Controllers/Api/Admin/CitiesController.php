@@ -145,6 +145,11 @@ class CitiesController extends Controller
     public function destroy(City $city)
     {
         $city->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa thành phố thành công',
+            'status_code' => 200
+        ]);
 
     }
 

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanySize;
+use App\Models\DesiredLevel;
 use App\Models\Job;
+use App\Models\Objective;
 use App\Models\User;
 use App\Utillities\Constant;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -220,7 +222,74 @@ class AdminStatsController extends Controller
         return $pdf->download('company_report.pdf');
     }
 
+    public function generateObjectiveStats()
+    {
+        // Lấy dữ liệu thống kê từ database
+        $objectivesByPosition = Objective::select('desired_levels.name as desired_level', \DB::raw('COUNT(*) as count'))
+            ->join('desired_levels', 'objectives.desired_level_id', '=', 'desired_levels.id')
+            ->groupBy('objectives.desired_level_id', 'desired_levels.name')
+            ->get();
 
+        $objectivesBySalary = Objective::select(\DB::raw('CONCAT(salary_from, " - ", salary_to) as salary_range'), \DB::raw('COUNT(*) as count'))
+            ->groupBy('salary_from', 'salary_to')
+            ->get();
+
+        $objectivesByEducationLevel = Objective::select('education_levels.name as education_level', \DB::raw('COUNT(*) as count'))
+            ->join('education_levels', 'objectives.education_level_id', '=', 'education_levels.id')
+            ->groupBy('objectives.education_level_id', 'education_levels.name')
+            ->get();
+
+        $objectivesByProfession = Objective::select('professions.name as profession', \DB::raw('COUNT(*) as count'))
+            ->join('professions', 'objectives.profession_id', '=', 'professions.id')
+            ->groupBy('objectives.profession_id', 'professions.name')
+            ->get();
+
+        $objectivesByEmploymentType = Objective::select('employment_types.name as employment_type', \DB::raw('COUNT(*) as count'))
+            ->join('employment_types', 'objectives.employment_type_id', '=', 'employment_types.id')
+            ->groupBy('objectives.employment_type_id', 'employment_types.name')
+            ->get();
+
+        $objectivesByExperienceLevel = Objective::select('experience_levels.name as experience_level', \DB::raw('COUNT(*) as count'))
+            ->join('experience_levels', 'objectives.experience_level_id', '=', 'experience_levels.id')
+            ->groupBy('objectives.experience_level_id', 'experience_levels.name')
+            ->get();
+
+        $objectivesByCountry = Objective::select('countries.name as country_name', \DB::raw('COUNT(*) as count'))
+            ->join('countries', 'objectives.country_id', '=', 'countries.id')
+            ->groupBy('objectives.country_id', 'countries.name')
+            ->get();
+
+        $objectivesByCity = Objective::select('cities.name as city_name', \DB::raw('COUNT(*) as count'))
+            ->join('cities', 'objectives.city_id', '=', 'cities.id')
+            ->groupBy('objectives.city_id', 'cities.name')
+            ->get();
+
+        $objectivesByDistrict = Objective::select('districts.name as district_name', \DB::raw('COUNT(*) as count'))
+            ->join('districts', 'objectives.district_id', '=', 'districts.id')
+            ->groupBy('objectives.district_id', 'districts.name')
+            ->get();
+
+        // Chuẩn bị dữ liệu trả về
+        $data = [
+            'objectivesByPosition' => $objectivesByPosition,
+            'objectivesBySalary' => $objectivesBySalary,
+            'objectivesByEducationLevel' => $objectivesByEducationLevel,
+            'objectivesByProfession' => $objectivesByProfession,
+            'objectivesByEmploymentType' => $objectivesByEmploymentType,
+            'objectivesByExperienceLevel' => $objectivesByExperienceLevel,
+            'objectivesByCountry' => $objectivesByCountry,
+            'objectivesByCity' => $objectivesByCity,
+            'objectivesByDistrict' => $objectivesByDistrict        ];
+
+
+        $pdf = PDF::loadView('reports.objective_report', $data);
+        $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
+        $pdf->getDomPDF()->getOptions()->set('isRemoteEnabled', true);
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->getDomPDF()->set_option("defaultFont", "DejaVu Sans");
+
+        return $pdf->download('objective_report.pdf');
+    }
 
 
 }

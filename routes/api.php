@@ -136,6 +136,7 @@ Route::get('/company-types', [PublicDataController::class, 'getCompanyTypes']);
 Route::get('/workplaces', [PublicDataController::class, 'getWorkPlaces']);
 Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
 Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
+Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);
 
 Route::get('/company-sizes', [PublicDataController::class, 'getCompanySizes']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
@@ -279,6 +280,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/statistics', [AdminStatsController::class, 'index']);
         Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
         Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
+        Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);
 
         Route::get('/report/server-performance', [ServerPerformanceReportController::class, 'getServerPerformance']);
 

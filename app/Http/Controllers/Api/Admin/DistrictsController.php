@@ -146,6 +146,11 @@ class DistrictsController extends Controller
     public function destroy(District $district)
     {
         $district->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa quận huyện thành công',
+            'status_code' => 200
+        ]);
 
     }
     public function getDistrictsByCity($cityId)
