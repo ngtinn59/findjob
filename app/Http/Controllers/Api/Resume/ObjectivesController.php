@@ -61,20 +61,20 @@ class ObjectivesController extends Controller
             return [
                 'id' => $objective->id, // ID của bản ghi vừa tạo
                 'desired_position' => $objective->desired_position,
-                'desired_level_id' => $objective->desiredLevel->name ?? null,
-                'education_level_id' => $objective->educationLevel->name ?? null,
-                'profession_id' => $objective->profession->name ?? null,
-                'employment_type_id' => $objective->employmentType->name ?? null,
-                'experience_level_id' => $objective->experienceLevel->name ?? null,
-                'workplace_id' => $objective->workPlace->name ?? null,
+                'desired_level' => $objective->desiredLevel->name ?? null,
+                'education_level' => $objective->educationLevel->name ?? null,
+                'profession' => $objective->profession->name ?? null,
+                'employment_type' => $objective->employmentType->name ?? null,
+                'experience_level' => $objective->experienceLevel->name ?? null,
+                'workplace' => $objective->workPlace->name ?? null,
                 'work_address' => $objective->work_address,
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
                 'file' =>  asset('cvs/' . $objective->file),
                 'status' => $objective->status,
-                'country_id' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-                'city_id' => $objective->city ? $objective->city->name : null, // Tên thành phố
-                'district_id' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+                'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+                'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
                 'created_at' => $objective->created_at,
                 'updated_at' => $objective->updated_at,
             ];
@@ -161,20 +161,48 @@ class ObjectivesController extends Controller
         $responseData = [
             'id' => $objective->id, // ID của bản ghi vừa tạo
             'desired_position' => $objective->desired_position,
-            'desired_level_id' => $objective->desiredLevel->name ?? null,
-            'education_level_id' => $objective->educationLevel->name ?? null,
-            'profession_id' => $objective->profession->name ?? null,
-            'employment_type_id' => $objective->employmentType->name ?? null,
-            'experience_level_id' => $objective->experienceLevel->name ?? null,
-            'workplace_id' => $objective->workPlace->name ?? null,
+            'desired_level' => [
+                'id' => $objective->desiredLevel->id ?? null,
+                'name' => $objective->desiredLevel->name ?? null
+            ],
+            'education_level' => [
+                'id' => $objective->educationLevel->id ?? null,
+                'name' => $objective->educationLevel->name ?? null
+            ],
+            'profession' => [
+                'id' => $objective->profession->id ?? null,
+                'name' => $objective->profession->name ?? null
+            ],
+            'employment_type' => [
+                'id' => $objective->employmentType->id ?? null,
+                'name' => $objective->employmentType->name ?? null,
+            ],
+            'experience_level' => [
+                'id' => $objective->experienceLevel->id ?? null,
+                'name' => $objective->experienceLevel->name ?? null
+
+            ],
+            'workplace' => [
+                'id' => $objective->workPlace->id ?? null,
+                'name' => $objective->workPlace->name ?? null
+            ],
             'work_address' => $objective->work_address,
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
             'file' =>  asset('cvs/' . $objective->file),
             'status' => $objective->status,
-            'country_id' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-            'city_id' => $objective->city ? $objective->city->name : null, // Tên thành phố
-            'district_id' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+            'country' =>  [
+                'id' =>  $objective->country->id,
+                'name' =>  $objective->country->name,
+            ],
+            'city' => [
+                'id' => $objective->city->id,
+                'name' => $objective->city->name,
+            ],
+            'district' => [
+                'id' => $objective->district->id,
+                'name' => $objective->district->name,
+            ],
             'created_at' => $objective->created_at,
             'updated_at' => $objective->updated_at,
         ];
@@ -257,20 +285,48 @@ class ObjectivesController extends Controller
         $responseData = [
             'id' => $objective->id, // ID của bản ghi vừa tạo
             'desired_position' => $objective->desired_position,
-            'desired_level_id' => $objective->desiredLevel->name ?? null,
-            'education_level_id' => $objective->educationLevel->name ?? null,
-            'profession_id' => $objective->profession->name ?? null,
-            'employment_type_id' => $objective->employmentType->name ?? null,
-            'experience_level_id' => $objective->experienceLevel->name ?? null,
-            'workplace_id' => $objective->workPlace->name ?? null,
+            'desired_level' => [
+                'id' => $objective->desiredLevel->id ?? null,
+                'name' => $objective->desiredLevel->name ?? null
+            ],
+            'education_level' => [
+                'id' => $objective->educationLevel->id ?? null,
+                'name' => $objective->educationLevel->name ?? null
+            ],
+            'profession' => [
+                'id' => $objective->profession->id ?? null,
+                'name' => $objective->profession->name ?? null
+            ],
+            'employment_type' => [
+                'id' => $objective->employmentType->id ?? null,
+                'name' => $objective->employmentType->name ?? null,
+            ],
+            'experience_level' => [
+                'id' => $objective->experienceLevel->id ?? null,
+                'name' => $objective->experienceLevel->name ?? null
+
+            ],
+            'workplace' => [
+                'id' => $objective->workPlace->id ?? null,
+                'name' => $objective->workPlace->name ?? null
+            ],
             'work_address' => $objective->work_address,
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
             'file' =>  asset('cvs/' . $objective->file),
             'status' => $objective->status,
-            'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-            'city_id' => $objective->city ? $objective->city->name : null, // Tên thành phố
-            'district_id' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+            'country' =>  [
+                'id' =>  $objective->country->id,
+                'name' =>  $objective->country->name,
+            ],
+            'city' => [
+                'id' => $objective->city->id,
+                'name' => $objective->city->name,
+            ],
+            'district' => [
+                'id' => $objective->district->id,
+                'name' => $objective->district->name,
+            ],
             'created_at' => $objective->created_at,
             'updated_at' => $objective->updated_at,
         ];
@@ -445,22 +501,50 @@ class ObjectivesController extends Controller
         $objective->update($validatedData);
 
         $responseData = [
-            'id' => $objective->id, // ID của bản ghi vừa cập nhật
+            'id' => $objective->id, // ID của bản ghi vừa tạo
             'desired_position' => $objective->desired_position,
-            'desired_level_id' => $objective->desiredLevel->name ?? null,
-            'profession_id' => $objective->profession->name ?? null,
-            'employment_type_id' => $objective->employmentType->name ?? null,
-            'experience_level_id' => $objective->experienceLevel->name ?? null,
+            'desired_level' => [
+                'id' => $objective->desiredLevel->id ?? null,
+                'name' => $objective->desiredLevel->name ?? null
+            ],
+            'education_level' => [
+                'id' => $objective->educationLevel->id ?? null,
+                'name' => $objective->educationLevel->name ?? null
+            ],
+            'profession' => [
+                'id' => $objective->profession->id ?? null,
+                'name' => $objective->profession->name ?? null
+            ],
+            'employment_type' => [
+                'id' => $objective->employmentType->id ?? null,
+                'name' => $objective->employmentType->name ?? null,
+            ],
+            'experience_level' => [
+                'id' => $objective->experienceLevel->id ?? null,
+                'name' => $objective->experienceLevel->name ?? null
+
+            ],
+            'workplace' => [
+                'id' => $objective->workPlace->id ?? null,
+                'name' => $objective->workPlace->name ?? null
+            ],
             'work_address' => $objective->work_address,
-            'education_level_id' => $objective->educationLevel->name ?? null,
             'salary_from' => $objective->salary_from,
             'salary_to' => $objective->salary_to,
-            'file' => asset('cvs/' . $objective->file),
+            'file' =>  asset('cvs/' . $objective->file),
             'status' => $objective->status,
-            'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-            'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
-            'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
-            'profiles_id' => $objective->profiles_id,
+            'country' =>  [
+                'id' =>  $objective->country->id,
+                'name' =>  $objective->country->name,
+            ],
+            'city' => [
+                'id' => $objective->city->id,
+                'name' => $objective->city->name,
+            ],
+            'district' => [
+                'id' => $objective->district->id,
+                'name' => $objective->district->name,
+            ],
             'created_at' => $objective->created_at,
             'updated_at' => $objective->updated_at,
         ];
@@ -492,20 +576,20 @@ class ObjectivesController extends Controller
             'data' => [
                 'id' => $objective->id, // ID của bản ghi vừa tạo
                 'desired_position' => $objective->desired_position,
-                'desired_level_id' => $objective->desiredLevel->name ?? null,
-                'education_level_id' => $objective->educationLevel->name ?? null,
-                'profession_id' => $objective->profession->name ?? null,
-                'employment_type_id' => $objective->employmentType->name ?? null,
-                'experience_level_id' => $objective->experienceLevel->name ?? null,
-                'workplace_id' => $objective->workPlace->name ?? null,
+                'desired_level' => $objective->desiredLevel->name ?? null,
+                'education_level' => $objective->educationLevel->name ?? null,
+                'profession' => $objective->profession->name ?? null,
+                'employment_type' => $objective->employmentType->name ?? null,
+                'experience_level' => $objective->experienceLevel->name ?? null,
+                'workplace' => $objective->workPlace->name ?? null,
                 'work_address' => $objective->work_address,
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
                 'file' =>  asset('cvs/' . $objective->file),
                 'status' => $objective->status,
-                'country_id' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-                'city_id' => $objective->city ? $objective->city->name : null, // Tên thành phố
-                'district_id' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
+                'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
+                'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
                 'created_at' => $objective->created_at,
                 'updated_at' => $objective->updated_at,
             ],
