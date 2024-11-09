@@ -15,14 +15,53 @@ class CitiesController extends Controller
      */
     public function index()
     {
-        $city = City::all();
-        return response()->json([
-            'success' => true,
-            'message' => "success",
-            "data" => $city,
-            'status_code' => 200
-        ]);
+        try {
+            // Lấy tất cả dữ liệu từ bảng City và load thông tin Country
+            $cities = City::with('country')->get();  // Giả sử bảng City có quan hệ với Country thông qua phương thức 'country'
+
+            // Kiểm tra nếu không có dữ liệu
+            if ($cities->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có thành phố nào được tìm thấy',
+                    'data' => [],
+                    'status_code' => 404
+                ]);
+            }
+
+            // Tùy chỉnh lại dữ liệu trả về, bao gồm id, name của city và country name
+            $citiesData = $cities->map(function ($city) {
+                return [
+                    'id' => $city->id,
+                    'name' => $city->name,
+                    'country' => [
+                        'id' =>$city->country->id,
+                        'name' =>$city->country->name,
+                    ],
+                    'created_at' => $city->created_at,   // Lấy ngày tạo
+                    'updated_at' => $city->updated_at,   // Lấy ngày cập nhật
+                ];
+            });
+
+            // Trả về dữ liệu thành công
+            return response()->json([
+                'success' => true,
+                'message' => 'Lấy danh sách thành phố và quốc gia thành công',
+                'data' => $citiesData,
+                'status_code' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            // Bắt lỗi và trả về thông báo lỗi
+            return response()->json([
+                'success' => false,
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách thành phố và quốc gia',
+                'error' => $e->getMessage(),
+                'status_code' => 500
+            ]);
+        }
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -112,12 +151,18 @@ class CitiesController extends Controller
     public function getCitiesByCountry($countryId)
     {
         $cities = City::where('country_id', $countryId)->get();
+        $citiesData = $cities->map(function ($city) {
+            return [
+                'id' => $city->id,
+                'name' => $city->name,
+            ];
+        });
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => $cities,
+            'data' => $citiesData,
             'status_code' => 200
-        ]);
+        ],200);
     }
 
 }

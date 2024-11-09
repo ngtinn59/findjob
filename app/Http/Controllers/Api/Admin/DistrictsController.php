@@ -12,13 +12,47 @@ class DistrictsController extends Controller
 {
     public function index()
     {
-        $district = District::all();
-        return response()->json([
-            'message' => "Lấy danh sách các quận huyện thành công",
-            "data" => $district,
-            'status_code' => 200
-        ]);
+        try {
+            $districts = District::all();  // Lấy tất cả dữ liệu từ bảng districts
+
+            // Kiểm tra nếu không có dữ liệu
+            if ($districts->isEmpty()) {  // Sử dụng isEmpty() trên collection
+                return response()->json([
+                    'message' => 'Không có quận huyện nào được tìm thấy',
+                    'data' => []
+                ], 404); // HTTP status 404: Not Found
+            }
+
+            // Map dữ liệu quận huyện
+            $districtsData = $districts->map(function ($district) {
+                return [
+                    'id' => $district->id,
+                    'name' => $district->name,
+                    'city' => [
+                        'id' => $district->city->id,
+                        'name' => $district->city->name,
+                    ],
+                    'created_at' => $district->created_at,
+                    'updated_at' => $district->updated_at,
+                ];
+            });
+
+            return response()->json([
+                'message' => "Lấy danh sách các quận huyện thành công",
+                'data' => $districtsData,
+                'status_code' => 200
+            ], 200); // HTTP status 200: OK
+
+        } catch (\Exception $e) {
+            // Trả về lỗi nếu có vấn đề
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách quận huyện',
+                'error' => $e->getMessage()
+            ], 500); // HTTP status 500: Internal Server Error
+        }
     }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -117,10 +151,17 @@ class DistrictsController extends Controller
     public function getDistrictsByCity($cityId)
     {
         $districts = District::where('city_id', $cityId)->get();
+        $districtsData = $districts->map(function ($district) {
+            return [
+                'id' => $district->id,
+                'name' => $district->name,
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => $districts,
+            'data' => $districtsData,
             'status_code' => 200
         ]);
     }

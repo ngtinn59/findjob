@@ -130,14 +130,14 @@ Route::get('/openapi.json', function () {
 });
 
 // Public Routes
-Route::get('/countries', [CountriesController::class, 'index']);
-Route::get('/cities', [CitiesController::class, 'index']);
-Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
-Route::get('/workplaces', [WorkplacesController::class, 'index']);
+Route::get('/countries', [PublicDataController::class, 'getCountries']);
+Route::get('/cities', [PublicDataController::class, 'getCities']);
+Route::get('/company-types', [PublicDataController::class, 'getCompanyTypes']);
+Route::get('/workplaces', [PublicDataController::class, 'getWorkPlaces']);
 Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
 Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
 
-Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
+Route::get('/company-sizes', [PublicDataController::class, 'getCompanySizes']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::resource('/districts', DistrictsController::class);
