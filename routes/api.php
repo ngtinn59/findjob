@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
     ExperienceLevelsController,
     LanguagesController,
     ProfessionsController,
+    ServerPerformanceReportController,
     WorkplacesController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
@@ -134,7 +135,7 @@ Route::get('/cities', [CitiesController::class, 'index']);
 Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
 Route::get('/workplaces', [WorkplacesController::class, 'index']);
 Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
-
+Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
 
 Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
@@ -277,6 +278,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/statistics', [AdminStatsController::class, 'index']);
         Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
+        Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
+
+        Route::get('/report/server-performance', [ServerPerformanceReportController::class, 'getServerPerformance']);
 
         Route::resource('/languages', LanguagesController::class);
 
