@@ -622,73 +622,123 @@ class JobsController extends Controller
     {
         // Lấy người dùng hiện tại
         $user = auth()->user();
-
-        // Lấy profile của người dùng
         $profile = $user->profile;
-
 
         if (!$profile) {
             return []; // Không có đề xuất nếu không có profile
         }
 
-        // Lấy objectives liên quan đến profile
         $objectives = $profile->objectives;
-
-        // Kiểm tra xem có objectives không
         if ($objectives->isEmpty()) {
             return []; // Không có đề xuất nếu không có objectives
         }
 
-        // Tìm kiếm các công việc dựa trên các tiêu chí trong objectives
-        $jobs = Job::query()
-            ->where('status', 1);
+        // Lấy tất cả công việc có status = 1 (hoạt động)
+        $jobs = Job::where('status', 1)->with(['company', 'city', 'profession', 'employmentType', 'experienceLevel', 'educationLevel', 'workplace'])->get();
 
-        foreach ($objectives as $objective) {
-            // Lọc theo vị trí mong muốn
-            if ($objective->desired_position) {
-                $jobs->orWhere('title', 'LIKE', '%' . $objective->desired_position . '%');
+        // Tạo danh sách công việc với điểm số
+        $scoredJobs = [];
+
+        foreach ($jobs as $job) {
+            $score = 0; // Khởi tạo điểm cho công việc này
+
+            foreach ($objectives as $objective) {
+                // So khớp vị trí mong muốn
+                if ($objective->desired_position && stripos($job->title, $objective->desired_position) !== false) {
+                    $score += 15;
+                }
+
+                // So khớp ngành nghề
+                if ($objective->profession_id && $job->profession_id == $objective->profession_id) {
+                    $score += 20;
+                }
+
+                // So khớp cấp độ giáo dục
+                if ($objective->education_level_id && $job->education_level_id == $objective->education_level_id) {
+                    $score += 10;
+                }
+
+                // So khớp loại hình làm việc
+                if ($objective->employment_type_id && $job->employment_type_id == $objective->employment_type_id) {
+                    $score += 10;
+                }
+
+                // So khớp cấp độ kinh nghiệm
+                if ($objective->experience_level_id && $job->experience_level_id == $objective->experience_level_id) {
+                    $score += 10;
+                }
+
+                // So khớp khu vực làm việc
+                if ($objective->workplace_id && $job->workplace_id == $objective->workplace_id) {
+                    $score += 10;
+                }
+
+                // So khớp địa chỉ làm việc
+                if ($objective->work_address && $job->work_address == $objective->work_address) {
+                    $score += 5;
+                }
+
+                // So khớp quốc gia
+                if ($objective->country_id && $job->country_id == $objective->country_id) {
+                    $score += 5;
+                }
+
+                // So khớp thành phố
+                if ($objective->city_id && $job->city_id == $objective->city_id) {
+                    $score += 5;
+                }
+
+                // So khớp quận/huyện
+                if ($objective->district_id && $job->district_id == $objective->district_id) {
+                    $score += 5;
+                }
+
+                // So khớp khoảng lương mong muốn
+                if ($objective->salary_from && $job->salary_from >= $objective->salary_from) {
+                    $score += 5;
+                }
+                if ($objective->salary_to && $job->salary_to <= $objective->salary_to) {
+                    $score += 5;
+                }
             }
 
-            // Lọc theo ngành nghề
-            if ($objective->profession_id) {
-                $jobs->orWhere('profession_id', $objective->profession_id);
-            }
-
-            // Lọc theo cấp độ giáo dục
-            if ($objective->education_level_id) {
-                $jobs->orWhere('education_level_id', $objective->education_level_id);
-            }
-
-            // Lọc theo loại hình làm việc
-            if ($objective->employment_type_id) {
-                $jobs->orWhere('employment_type_id', $objective->employment_type_id);
-            }
-
-            // Lọc theo khu vực
-            if ($objective->city_id) {
-                $jobs->orWhere('city_id', $objective->city_id);
-            }
+            // Thêm công việc và điểm số vào danh sách
+            $scoredJobs[] = [
+                'job' => $job,
+                'score' => $score,
+            ];
         }
 
-        // Lấy danh sách công việc đề xuất
-        return $jobs->with(['company', 'city', 'profession'])->take(5)->get()->map(function ($job) {
+        // Sắp xếp danh sách công việc theo điểm số giảm dần
+        usort($scoredJobs, function ($a, $b) {
+            return $b['score'] <=> $a['score'];
+        });
+
+        // Lấy 5 công việc có điểm cao nhất
+        $topJobs = array_slice($scoredJobs, 0, 5);
+
+        // Trả về danh sách công việc đề xuất với dữ liệu cần thiết
+        return collect($topJobs)->map(function ($scoredJob) {
+            $job = $scoredJob['job'];
             return [
                 'id' => $job->id,
                 'title' => $job->title,
                 'featured' => $job->featured,
-                'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
-
+                'is_hot' => ($job->views > 100) ? 1 : 0,
                 'company' => $job->company->company_name,
-                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
+                'logo' => asset('uploads/images/' . $job->company->logo),
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
                 ],
                 'city' => $job->city->name,
                 'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
+                'score' => $scoredJob['score'],
             ];
         });
     }
+
+
 
     public function getNotifications()
     {
