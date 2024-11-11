@@ -59,22 +59,49 @@ class ObjectivesController extends Controller
         // Chuyển đổi dữ liệu để trả về dưới dạng JSON
         $objectiveData = $objectives->map(function ($objective) {
             return [
-                'id' => $objective->id, // ID của bản ghi vừa tạo
+                'id' => $objective->id,
                 'desired_position' => $objective->desired_position,
-                'desired_level' => $objective->desiredLevel->name ?? null,
-                'education_level' => $objective->educationLevel->name ?? null,
-                'profession' => $objective->profession->name ?? null,
-                'employment_type' => $objective->employmentType->name ?? null,
-                'experience_level' => $objective->experienceLevel->name ?? null,
-                'workplace' => $objective->workPlace->name ?? null,
+                'desired_level' => [
+                    'id' => $objective->desiredLevel->id ?? null,
+                    'name' => $objective->desiredLevel->name ?? null
+                ],
+                'education_level' => [
+                    'id' => $objective->educationLevel->id ?? null,
+                    'name' => $objective->educationLevel->name ?? null
+                ],
+                'profession' => [
+                    'id' => $objective->profession->id ?? null,
+                    'name' => $objective->profession->name ?? null
+                ],
+                'employment_type' => [
+                    'id' => $objective->employmentType->id ?? null,
+                    'name' => $objective->employmentType->name ?? null
+                ],
+                'experience_level' => [
+                    'id' => $objective->experienceLevel->id ?? null,
+                    'name' => $objective->experienceLevel->name ?? null
+                ],
+                'workplace' => [
+                    'id' => $objective->workPlace->id ?? null,
+                    'name' => $objective->workPlace->name ?? null
+                ],
                 'work_address' => $objective->work_address,
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
-                'file' =>  asset('cvs/' . $objective->file),
+                'file' => asset('cvs/' . $objective->file),
                 'status' => $objective->status,
-                'country' => $objective->country ? $objective->country->name : null, // Tên quốc gia
-                'city' => $objective->city ? $objective->city->name : null, // Tên thành phố
-                'district' => $objective->district ? $objective->district->name : null, // Tên quận/huyện
+                'country' => [
+                    'id' => $objective->country->id ?? null,
+                    'name' => $objective->country->name ?? null
+                ],
+                'city' => [
+                    'id' => $objective->city->id ?? null,
+                    'name' => $objective->city->name ?? null
+                ],
+                'district' => [
+                    'id' => $objective->district->id ?? null,
+                    'name' => $objective->district->name ?? null
+                ],
                 'created_at' => $objective->created_at,
                 'updated_at' => $objective->updated_at,
             ];
@@ -87,6 +114,7 @@ class ObjectivesController extends Controller
             'status_code' => 200
         ]);
     }
+
 
 
     /**
@@ -636,7 +664,6 @@ class ObjectivesController extends Controller
         $objective->status = $request->input('status');
         $objective->save();
 
-        // Trả về phản hồi JSON với dữ liệu đã cập nhật
         return response()->json([
             'success' => true,
             'message' => 'Trạng thái đã được cập nhật thành công!',

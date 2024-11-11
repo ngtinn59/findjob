@@ -164,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-cv', [CvsController::class, 'upload']);
     Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
+    Route::delete('logout', [AuthController::class, 'logout']);
 
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
@@ -305,6 +306,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Đánh dấu công ty là nổi bật
         Route::post('companies/{companyId}/mark-as-hot', [AdminCompaniesController::class, 'markAsHot']);
+        Route::post('companies/{companyId}/mark-as-not-hot', [AdminCompaniesController::class, 'markAsNotHot']);
 
     });
 });

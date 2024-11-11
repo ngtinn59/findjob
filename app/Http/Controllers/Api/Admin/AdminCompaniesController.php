@@ -153,6 +153,66 @@ class AdminCompaniesController extends Controller
         ], 200);
     }
 
+    public function markAsNotHot($companyId)
+    {
+        // Tìm công ty theo ID
+        $company = Company::find($companyId);
+
+        // Kiểm tra xem công ty có tồn tại không
+        if (!$company) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy công ty.',
+                'status_code' => 404,
+            ], 404);
+        }
+
+        // Đánh dấu công ty là không nổi bật (is_hot = false)
+        $company->is_hot = false;
+        $company->save();
+
+        // Chuẩn bị dữ liệu trả về
+        $companyType = optional($company->companytype)->name;
+        $companySize = optional($company->companysize)->name;
+        $country = optional($company->country)->name;
+        $city = optional($company->city)->name;
+        $district = optional($company->district)->name;
+
+        $companyDetails = [
+            'id' => $company->id,
+            'name' => $company->company_name,
+            'company_type' => $companyType,
+            'company_size' => $companySize,
+            'country' => $country,
+            'city' => $city,
+            'district' => $district,
+            'phone' => $company->phone,
+            'company_email' => $company->company_email,
+            'tax_code' => $company->tax_code,
+            'date_of_establishment' => $company->date_of_establishment,
+            'working_days' => $company->working_days,
+            'overtime_policy' => $company->overtime_policy,
+            'website' => $company->website,
+            'facebook' => $company->facebook,
+            'youtube' => $company->youtube,
+            'linked' => $company->linked,
+            'address' => $company->address,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
+            'description' => $company->description,
+            'is_hot' => $company->is_hot,
+            'logo' => asset('uploads/images/' . $company->logo),
+            'banner' => asset('uploads/images/' . $company->banner),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Công ty đã được đánh dấu là không nổi bật.',
+            'data' => $companyDetails,
+            'status_code' => 200,
+        ], 200);
+    }
+
     public function destroy(Company $company)
     {
         $company->delete();
