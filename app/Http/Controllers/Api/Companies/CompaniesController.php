@@ -477,7 +477,10 @@ class CompaniesController extends Controller
                         'company_name' => $company->company_name,
                         'logo' => asset('uploads/images/' . $company->logo),
                         'is_hot' => $company->is_hot,
-                        'city' => $company->city->name,
+                        'city' => [
+                            'id' => $company->city->id,
+                            'name' => $company->city->name,
+                        ],
                         'created_at' => \Carbon\Carbon::parse($company->created_at)->format('d-m-Y'),
                     ];
                 }),

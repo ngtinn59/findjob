@@ -86,27 +86,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     return response()->json(['message' => 'Email đã được xác minh thành công!']);
 })->middleware(['signed'])->name('verification.verify');
 
-Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-    $user = User::findOrFail($id);
 
-    // Check if the email hash is correct
-    if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
-        return response()->json([
-            'message' => 'Invalid email verification link'
-        ], 400);
-    }
-
-    // Check if the email is already verified
-    if (!$user->hasVerifiedEmail()) {
-        // Mark the email as verified and trigger the Verified event
-        $user->markEmailAsVerified();
-        event(new Verified($user));
-    }
-
-    return response()->json([
-        'message' => 'Email đã được xác minh thành công!'
-    ]);
-})->middleware(['signed'])->name('verification.verify');
 
 
 
@@ -150,7 +130,13 @@ Route::get('employment-types', [PublicDataController::class, 'getEmploymentTypes
 Route::get('education-levels', [PublicDataController::class, 'getEducationLevels']);
 Route::get('desired-levels', [PublicDataController::class, 'getDesiredLevels']);
 Route::get('experience-levels', [PublicDataController::class, 'getExperienceLevels']);
-
+Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
+Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
+Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
+Route::get('/jobs/search', [JobsController::class, 'search']);
+Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
+Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
 
 // Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
@@ -175,15 +161,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('applicants/messages', [MessageController::class, 'indexAppliant']);
     Route::get('applicants-users/messages', [MessageController::class, 'indexapplicantuser']);
 
-    Route::get('/list-jobs', [JobsController::class, 'indexShow']);
-    Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
 
-    Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
-    Route::get('/jobs/search', [JobsController::class, 'search']);
-    Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
-    Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
 
-    Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
     // Profile Routes
     Route::resource('profile', ProfilesController::class);
     Route::get('/notifications', [NotificationController::class, 'index']);

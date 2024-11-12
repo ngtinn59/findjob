@@ -600,7 +600,10 @@ class JobsController extends Controller
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
                         ],
-                        'city' => $job->city->name,
+                        'city' => [
+                            'id' => $job->city->id,
+                            'name' => $job->city->name,
+                        ],
                         'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
                     ];
                 }),
@@ -731,7 +734,10 @@ class JobsController extends Controller
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
                 ],
-                'city' => $job->city->name,
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name,
+                ],
                 'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
                 'score' => $scoredJob['score'],
             ];
@@ -917,7 +923,10 @@ class JobsController extends Controller
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
                         ],
-                        'city' => $job->city->name,
+                        'city' => [
+                            'id' => $job->city->id,
+                            'name' => $job->city->name,
+                        ],
                         'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
                     ];
                 }),
