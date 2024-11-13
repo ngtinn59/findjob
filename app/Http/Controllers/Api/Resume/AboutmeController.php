@@ -50,12 +50,9 @@ class AboutmeController extends Controller
         ];
 
         $validator = Validator::make($data, [
-            'description' => 'required',
+            'description' => '',
             'profiles_id' => 'required|exists:profiles,id',
         ],[
-            'description.required' => 'Vui lòng nhập thông tin.',
-            'profiles_id.required' => 'profiles_id is required.',
-            'profiles_id.exists' => 'profiles_id is invalid.',
         ]);
 
         if ($validator->fails()) {

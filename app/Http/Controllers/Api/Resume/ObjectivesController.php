@@ -388,13 +388,13 @@ class ObjectivesController extends Controller
 
     public function search(Request $request)
     {
-        $keyword = $request->input('keyword'); // Từ khóa tìm kiếm
+        $keyword = $request->input('keyword');
         $city_id = $request->input('city_id');
-        $desired_level_id = $request->input('desired_level_id'); // ID
-        $profession_id = $request->input('profession_id'); // ID
-        $experience_level_id = $request->input('experience_level_id'); // ID
-        $education_level_id = $request->input('education_level_id'); // ID
-        $perPage = $request->input('per_page', 10); // Số lượng kết quả mỗi trang (mặc định là 10)
+        $desired_level_id = $request->input('desired_level_id');
+        $profession_id = $request->input('profession_id');
+        $experience_level_id = $request->input('experience_level_id');
+        $education_level_id = $request->input('education_level_id');
+        $user = $request->user(); // Lấy thông tin người dùng
 
         // Khởi tạo truy vấn
         $query = Objective::query()->where('status', 1);
@@ -422,41 +422,43 @@ class ObjectivesController extends Controller
             $query->where('education_level_id', $education_level_id);
         }
 
-        // Thực hiện truy vấn và phân trang kết quả
-        $objectives = $query->paginate($perPage);
+        // Thực hiện truy vấn và lấy tất cả kết quả
+        $objectives = $query->get();
 
         // Chuyển đổi dữ liệu để trả về dưới dạng JSON
-        $objectiveData = $objectives->map(function ($objective) {
+        $objectiveData = $objectives->map(function ($objective) use ($user) {
             return [
                 'id' => $objective->id,
                 'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
                 'name' => $objective->profile->name ?? null,
                 'desired_position' => $objective->desired_position,
-                'experience_level' => $objective->experienceLevel->name ?? null,
+                'experienceLevel' => [
+                    'id' => $objective->experienceLevel->id,
+                    'name' => $objective->experienceLevel->name
+                ],
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
-                'city' => $objective->city ? $objective->city->name : null,
-                'district' => $objective->district ? $objective->district->name : null,
+                'city' => [
+                    'id' => $objective->city->id,
+                    'name' => $objective->city->name,
+                ],
+                'district' => [
+                    'id' => $objective->district->id,
+                    'name' => $objective->district->name,
+                ],
                 'updated_at' => $objective->updated_at->format('Y-m-d H:i:s'),
+                'is_saved' => $user->savedCandidates()->where('objective_id', $objective->id)->exists() ? 1 : 0,
             ];
         });
 
-        // Trả về dữ liệu với thông tin phân trang
+        // Trả về kết quả dưới dạng JSON
         return response()->json([
             'success' => true,
-            'message' => 'Dữ liệu được lấy thành công!',
             'data' => $objectiveData,
-            'pagination' => [
-                'current_page' => $objectives->currentPage(),
-                'last_page' => $objectives->lastPage(),
-                'total' => $objectives->total(),
-                'per_page' => $objectives->perPage(),
-                'next_page_url' => $objectives->nextPageUrl(),
-                'previous_page_url' => $objectives->previousPageUrl(),
-            ],
-            'status_code' => 200,
         ]);
     }
+
+
 
 
 
@@ -746,11 +748,20 @@ class ObjectivesController extends Controller
                 'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
                 'name' => $objective->profile->name ?? null,
                 'desired_position' => $objective->desired_position,
-                'experience_level' => $objective->experienceLevel->name ?? null,
+                'experienceLevel' => [
+                    'id' => $objective->experienceLevel->id,
+                    'name' => $objective->experienceLevel->name
+                ],
                 'salary_from' => $objective->salary_from,
                 'salary_to' => $objective->salary_to,
-                'city' => $objective->city ? $objective->city->name : null,
-                'district' => $objective->district ? $objective->district->name : null,
+                'city' => [
+                    'id' => $objective->city->id,
+                    'name' => $objective->city->name,
+                ],
+                'district' => [
+                    'id' => $objective->district->id,
+                    'name' => $objective->district->name,
+                ],
                 'updated_at' => $objective->updated_at->format('Y-m-d H:i:s'),
             ];
         });
@@ -798,34 +809,60 @@ class ObjectivesController extends Controller
                 'phone' => $objective->profile->phone,
                 'email' => $objective->profile->email,
                 'age' => $objective->profile->birthday ? Carbon::parse($objective->profile->birthday)->age : null,
-                'image_url' => url('uploads/images/' . $objective->profile->image), // Xây dựng URL của hình ảnh
+                'image_url' => $objective->profile->image ? url('uploads/images/' . $objective->profile->image) : null, // Full URL if image exists, otherwise null
                 'gender' => $objective->profile->gender,
                 'location' => $objective->profile->location,
                 'website' => $objective->profile->website,
+                ],
                 'objective' => [
                     'desired_position' => $objective->desired_position,
-                    'desired_level' => $objective->desiredLevel->name ?? null,
-                    'profession' => $objective->profession->name ?? null,
-                    'employment_type' => $objective->employmentType->name ?? null,
-                    'experience_level' => $objective->experienceLevel->name ?? null,
+                    'desiredLevel' => [
+                        'id' => $objective->desiredLevel->id ?? null,
+                        'name' => $objective->desiredLevel->name ?? null,
+                    ],
+                    'profession' => [
+                        'id' => $objective->profession->id ?? null,
+                        'name' => $objective->profession->name ?? null
+                    ],
+                    'employmentType' => [
+                        'id' =>  $objective->employmentType->id ?? null,
+                        'name' =>  $objective->employmentType->name ?? null
+                    ],
+                    'experienceLevel' => [
+                        'id' => $objective->experienceLevel->id ?? null,
+                        'name' => $objective->experienceLevel->name ?? null
+                    ],
                     'work_address' => $objective->work_address,
-                    'education_level' => $objective->educationLevel->name ?? null,
+                    'educationLevel' => [
+                        'id' => $objective->educationLevel->id,
+                        'name' => $objective->educationLevel->name
+                    ],
                     'salary_from' => $objective->salary_from,
                     'salary_to' => $objective->salary_to,
                     'file' => asset('cvs/' . $objective->file),
                     'status' => $objective->status,
-                    'country' => $candidate->country->name ?? null,
-                    'city' => $candidate->city->name ?? null,
-                    'district' => $candidate->district->name ?? null,
+                    'country' => [
+                        'id' => $objective->country->id ?? null,
+                        'name' => $objective->country->name ?? null,
+                    ],
+                    'city' => [
+                        'id' => $objective->city->id ?? null,
+                        'name' => $objective->city->name ?? null
+                    ],
+                    'district' => [
+                        'id' => $objective->district->id ?? null,
+                        'name' => $objective->district->name ?? null,
+                    ],
                 ],
                 'aboutme' => $objective->profile->abouts->map(function ($aboutme) {
                     return [
+                        'id' =>$aboutme->id,
                         'description' => $aboutme->description,
                     ];
                 }),
                 'educations' => $objective->profile->educations->map(function ($education) {
-
                     return [
+                        'id' => $education->id,
                         'degree' => $education->degree,
                         'institution' => $education->institution,
                         'start_date' => $education->start_date,
@@ -851,23 +888,23 @@ class ObjectivesController extends Controller
                     }
 
                     return [
+                        'id' => $skill->id,
                         'name' => $skill->name,
                         'level' => $levelString,
                     ];
                 }),
                 'PersonalProject' => $objective->profile->projects->map(function ($project) {
-
-
                     return [
+                        'id' =>$project->id,
                         'title' => $project->title,
                         'start_date' => $project->start_date,
                         'end_date' => $project->end_date,
-
                         'description' => $project->description,
                     ];
                 }),
                 'Certificate' => $objective->profile->certificates->map(function ($certificates) {
                     return [
+                        'id' =>$certificates->id,
                         'title' => $certificates->title,
                         'provider' => $certificates->provider,
                         'issueDate' => $certificates->issueDate,
@@ -877,6 +914,7 @@ class ObjectivesController extends Controller
                 }),
                 'WorkExperience' => $objective->profile->experiences->map(function ($experience) {
                     return [
+                        'id' => $experience->id,
                         'position' => $experience->position,
                         'company' => $experience->company,
                         'start_date' => $experience->start_date,
@@ -886,21 +924,18 @@ class ObjectivesController extends Controller
                 }),
                 'Award' => $objective->profile->awards->map(function ($awards) {
                     return [
+                        'id' => $awards->id,
                         'title' => $awards->title,
                         'provider' => $awards->provider,
                         'issueDate' => $awards->issueDate,
                         'description' => $awards->description,
                     ];
                 }),
-            ],
+
         ];
-
-
         return response()->json([
             'success' => true,
             'data' => $candidateData,
         ]);
     }
-
-
 }

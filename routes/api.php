@@ -88,11 +88,6 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 
 
 
-
-
-
-
-
 // Route to check if email is verified
 Route::get('/email/verify', function (Request $request) {
     return response()->json([
