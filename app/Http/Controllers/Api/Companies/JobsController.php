@@ -26,7 +26,7 @@ class JobsController extends Controller
         $user = auth()->user();
 
         // Kiểm tra xem người dùng có công ty hay không
-        $company = $user->companies; // Lấy công ty đầu tiên, nếu có
+        $company = $user->companies()->first(); // Lấy công ty đầu tiên, nếu có
 
         // Nếu người dùng không có công ty, trả về thông báo lỗi
         if (!$company) {
@@ -34,34 +34,31 @@ class JobsController extends Controller
                 'success' => false,
                 'message' => 'Người dùng không có công ty.',
                 'status_code' => 404
-            ], 404); // 404 cho trường hợp không có công ty
+            ], 404);
         }
 
         // Lấy danh sách công việc của công ty
-        $jobs = Job::where('company_id', $company->id)->paginate(10); // Thay đổi số lượng trang theo nhu cầu
+        $jobs = Job::where('company_id', $company->id)->get();
 
-        // Kiểm tra nếu có công việc
+        // Kiểm tra nếu không có công việc
         if ($jobs->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không có công việc nào cho công ty này.',
                 'status_code' => 404
-            ], 404); // 404 nếu không có công việc
+            ], 404);
         }
 
         // Dữ liệu công việc
         $jobsData = $jobs->map(function ($job) {
-            $applicationsCount = $job->applicants()->count();
-            $viewsCount = $job->views;
-
             return [
                 'id' => $job->id,
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'last_date' => $job->last_date,
                 'status' => $job->status,
-                'applications_count' => $applicationsCount,
-                'views_count' => $viewsCount,
+                'applications_count' => $job->applicants()->count(),
+                'views_count' => $job->views,
             ];
         });
 
@@ -70,15 +67,10 @@ class JobsController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => $jobsData,
-            'links' => [
-                'first' => $jobs->url(1),
-                'last' => $jobs->url($jobs->lastPage()),
-                'prev' => $jobs->previousPageUrl(),
-                'next' => $jobs->nextPageUrl(),
-            ],
             'status_code' => 200
-        ]);
+        ], 200);
     }
+
 
 
 
@@ -177,7 +169,7 @@ class JobsController extends Controller
             'success' => true,
             'message' => 'Công việc đã được khởi tạo thành công. Vui lòng đợi người kiểm duyệt xác nhận trước khi hiển thị công khai.',
             'data' => [
-                'job_id' => $job->id,
+                'id' => $job->id,
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'last_date' => $job->last_date,
@@ -224,23 +216,47 @@ class JobsController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => [
-                'job_id' => $job->id,
+                'id' => $job->id,
                 'title' => $job->title,
-                'profession' => $job->profession->name,
-                'desired_level' => $job->desiredLevel->name,
-                'workplace' => $job->workPlace->name,
-                'employment_type' => $job->employmentType->name,
+                'profession' => [
+                    'id' => $job->profession->id,
+                    'name' => $job->profession->name,
+                ],
+                'desiredLevel' => [
+                    'id'  => $job->desiredLevel->id,
+                    'name'  => $job->desiredLevel->name,
+                ],
+                'workPlace' =>[
+                    'id' =>  $job->workPlace->id,
+                    'name' =>  $job->workPlace->name
+                ],
+                'employmentType' => [
+                    'id' => $job->employmentType->id,
+                    'name' => $job->employmentType->name
+                ],
                 'quantity' => $job->quantity,
                 'salary_from' => $job->salary_from,
                 'salary_to' => $job->salary_to,
-                'education_level' => $job->educationLevel->name,
+                'educationLevel' => [
+                    'id' => $job->educationLevel->id,
+                    'name' => $job->educationLevel->name
+                ],
                 'last_date' => $job->last_date,
                 'description' => $job->description,
                 'skill_experience' => $job->skill_experience,
                 'benefits' => $job->benefits,
-                'country' => $job->country->name,
-                'city' => $job->city->name,
-                'district' => $job->district->name,
+                'country' => [
+                    'id' => $job->country->id,
+                    'name' => $job->country->name
+                ],
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name
+                ],
+                'district' => [
+                    'id' => $job->district->id,
+                    'name' => $job->district->name
+                ],
                 'work_address' => $job->work_address,
                 'latitude' => $job->latitude,
                 'longitude' => $job->longitude,
@@ -297,7 +313,7 @@ class JobsController extends Controller
             'description' => 'nullable|string',
             'skill_experience' => 'nullable|string',
             'benefits' => 'nullable|string',
-            'workplace_id' => 'nullable|string|max:255',
+            'workplace_id' => 'nullable',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'contact_name' => 'nullable|string|max:255',
@@ -351,10 +367,9 @@ class JobsController extends Controller
             'success' => true,
             'message' => 'Công việc đã được cập nhật thành công.',
             'data' => [
-                'job_id' => $job->id,
+                'id' => $job->id,
                 'title' => $job->title,
                 'featured' => $job->featured,
-                'created_at' => $job->created_at->format('Y-m-d H:i:s'),
                 'last_date' => $job->last_date,
                 'status' => $job->status,
             ],
@@ -448,45 +463,78 @@ class JobsController extends Controller
         // Tải thêm thông tin liên quan (nếu cần)
         $jobDetails = $job->load(['company', 'profession', 'employmentType', 'experienceLevel', 'educationLevel', 'city', 'district', 'country', 'desiredLevel', 'workplace']);
 
-        // Lấy danh sách công việc liên quan
-        // Lấy danh sách công việc liên quan với hệ thống chấm điểm
         $relatedJobs = $this->getRelatedJobs($job);
 
-        $relatedJobsData = $relatedJobs->map(function($relatedJob) {
+        $relatedJobsData = $relatedJobs->map(function ($relatedJob) {
+            $job = $relatedJob['job'];
             return [
-                'id' => $relatedJob['job']->id,
-                'title' => $relatedJob['job']->title,
-                'city' => $relatedJob['job']->city->name,
-                'company' => $relatedJob['job']->company->company_name,
-                'last_date' =>$relatedJob['job']->last_date,
-                'score' => $relatedJob['score'],
+                'id' => $job->id,
+                'title' => $job->title,
+                'featured' => $job->featured,
+                'is_hot' => ($job->views > 100) ? 1 : 0,
+                'company' => $job->company->company_name,
+                'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                'salary' => [
+                    'salary_from' => $job->salary_from,
+                    'salary_to' => $job->salary_to,
+                ],
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name,
+                ],
+                'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
             ];
-        });
+        })->values(); // Sử dụng values() để đảm bảo kết quả là một mảng.
+
+
 
         $dataRespone = [
             'id' => $job->id,
             'company' => [
+                'id' =>$job->Company->id,
                 'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                 'name' => $job->Company->company_name,
                 'size' => $job->Company->companysize->name,
             ],
             'job' => [
+                'id' => $job->id,
                 'title' => $job->title,
                 'last_date' => $job->last_date,
                 'views' => $job->views,
                 'created_at' => \Carbon\Carbon::parse($job->created_at)->format('Y-m-d'),
-                'experience_level' => $job->experienceLevel->name,
+                'experienceLevel' => [
+                    'id' => $job->experienceLevel->id,
+                    'name' => $job->experienceLevel->name,
+                ],
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
                 ],
-                'desired_level' => $job->desiredLevel->name,
-                'employment_type' => $job->employmentType->name,
-                'profession' => $job->profession->name,
-                'workplace' => $job->workPlace->name,
-                'education_level' => $job->educationLevel->name,
+                'desiredLevel' => [
+                    'id' => $job->desiredLevel->id,
+                    'name' => $job->desiredLevel->name,
+                ],
+                'employmentType' => [
+                    'id' => $job->employmentType->id,
+                    'name' => $job->employmentType->name,
+                ],
+                'profession' => [
+                    'id' => $job->profession->id,
+                    'name' => $job->profession->name
+                ],
+                'workPlace' => [
+                    'id' => $job->workPlace->id,
+                    'name' => $job->workPlace->name,
+                ],
+                'educationLevel' => [
+                    'id' => $job->educationLevel->id,
+                    'name' => $job->educationLevel->name,
+                ],
                 'quantity' => $job->quantity,
-                'city' => $job->city->name,
+                'city' => [
+                    'id' =>  $job->city->id,
+                    'name' =>  $job->city->name,
+                ],
                 'description' => $job->description,
                 'skill_experience' => $job->skill_experience,
                 'benefits' => $job->benefits,
@@ -580,7 +628,7 @@ class JobsController extends Controller
 
         // Thực hiện truy vấn và phân trang kết quả
         $results = $jobs->with(['company', 'city', 'profession'])
-            ->paginate(10); // Phân trang 10 công việc mỗi trang
+            ->get(); // Phân trang 10 công việc mỗi trang
 
         // Lấy công việc đề xuất
         $suggestedJobs = $this->getSuggestedJobs();
@@ -596,6 +644,7 @@ class JobsController extends Controller
                         'featured' => $job->featured,
                         'is_hot' => ($job->views > 100) ? 1 : 0,
                         'company' => $job->company->company_name,
+                        'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
@@ -609,14 +658,6 @@ class JobsController extends Controller
                 }),
                 'suggested_jobs' => $suggestedJobs,
             ],
-            'pagination' => [
-                'current_page' => $results->currentPage(),
-                'last_page' => $results->lastPage(),
-                'total' => $results->total(),
-                'per_page' => $results->perPage(),
-                'next_page_url' => $results->nextPageUrl(), // URL để lấy trang tiếp theo
-                'previous_page_url' => $results->previousPageUrl(), // URL để lấy trang trước đó
-            ],
         ]);
     }
 
@@ -626,7 +667,6 @@ class JobsController extends Controller
         // Lấy người dùng hiện tại
         $user = auth()->user();
         $profile = $user->profile;
-
         if (!$profile) {
             return []; // Không có đề xuất nếu không có profile
         }
@@ -648,12 +688,12 @@ class JobsController extends Controller
             foreach ($objectives as $objective) {
                 // So khớp vị trí mong muốn
                 if ($objective->desired_position && stripos($job->title, $objective->desired_position) !== false) {
-                    $score += 15;
+                    $score += 50;
                 }
 
                 // So khớp ngành nghề
                 if ($objective->profession_id && $job->profession_id == $objective->profession_id) {
-                    $score += 20;
+                    $score += 50;
                 }
 
                 // So khớp cấp độ giáo dục
@@ -905,7 +945,7 @@ class JobsController extends Controller
 
         // Thực hiện truy vấn và phân trang kết quả
         $results = $jobs->with(['company', 'city', 'profession'])
-            ->paginate(10); // Phân trang 10 công việc mỗi trang
+            ->get(); // Phân trang 10 công việc mỗi trang
 
         // Trả về kết quả dưới dạng JSON
         return response()->json([
@@ -931,13 +971,7 @@ class JobsController extends Controller
                     ];
                 }),
             ],
-            'current_page' => $results->currentPage(),
-            'last_page' => $results->lastPage(),
-            'total' => $results->total(),
         ]);
     }
-
-
-
 
 }

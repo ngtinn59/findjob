@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.8",
         "openai-php/client": "^0.10.2",
         "pusher/pusher-php-server": "^7.2",
+        "spatie/laravel-responsecache": "^7.6",
         "symfony/process": "^6.4"
     },
     "require-dev": {

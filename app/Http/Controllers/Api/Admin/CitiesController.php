@@ -6,7 +6,9 @@ use App\Models\City;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Spatie\ResponseCache\Facades\ResponseCache;
 
 class CitiesController extends Controller
 {
@@ -155,6 +157,7 @@ class CitiesController extends Controller
 
     public function getCitiesByCountry($countryId)
     {
+
         $cities = City::where('country_id', $countryId)->get();
         $citiesData = $cities->map(function ($city) {
             return [

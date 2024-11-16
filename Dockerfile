@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     libicu-dev \
     libonig-dev \
+    cron \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
@@ -42,9 +43,15 @@ COPY . /var/www
 # Copy existing application directory permissions
 COPY --chown=www:www . /var/www
 
-# Change current user to www
-USER www
+# Add crontab configuration
+COPY ./php/crontab /etc/cron.d/laravel-cron
 
-# Expose port 9000 and start php-fpm server
+# Set permissions for the cron file
+RUN chmod 0644 /etc/cron.d/laravel-cron
+
+# Apply cron job and start cron service
+RUN crontab /etc/cron.d/laravel-cron
+
+# Expose port 9000 and start php-fpm server and cron in the same container
 EXPOSE 9000
-CMD ["php-fpm"]
+CMD ["sh", "-c", "cron && php-fpm"]

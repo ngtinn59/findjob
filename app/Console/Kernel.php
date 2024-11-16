@@ -12,8 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Chạy command để xóa tài khoản chưa xác nhận email mỗi ngày lúc 1:00 sáng
-        $schedule->command('users:delete-unverified')->dailyAt('01:00');
+        $schedule->command('users:delete-unverified')
+            ->everyMinute()
+            ->appendOutputTo(storage_path('logs/schedule.log'));
     }
 
     /**

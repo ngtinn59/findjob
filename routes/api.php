@@ -104,6 +104,10 @@ Route::get('/openapi.json', function () {
     return response()->json(['error' => 'OpenAPI JSON file not found'], 404);
 });
 
+
+
+
+
 // Public Routes
 Route::get('/countries', [PublicDataController::class, 'getCountries']);
 Route::get('/cities', [PublicDataController::class, 'getCities']);
@@ -121,6 +125,7 @@ Route::get('countries/{country}/cities', [CitiesController::class, 'getCitiesByC
 Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
 Route::get('languages', [PublicDataController::class, 'getLanguages']);
 Route::get('professions', [PublicDataController::class, 'getProfessions']);
+
 Route::get('employment-types', [PublicDataController::class, 'getEmploymentTypes']);
 Route::get('education-levels', [PublicDataController::class, 'getEducationLevels']);
 Route::get('desired-levels', [PublicDataController::class, 'getDesiredLevels']);
@@ -128,7 +133,6 @@ Route::get('experience-levels', [PublicDataController::class, 'getExperienceLeve
 Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
 Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
 Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
-Route::get('/jobs/search', [JobsController::class, 'search']);
 Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
 Route::get('/list-jobs', [JobsController::class, 'indexShow']);
 Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
@@ -149,12 +153,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
-
     Route::post('messages', [MessageController::class, 'sendMessage']);
+
     Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
     Route::get('messages', [MessageController::class, 'index']);
     Route::get('applicants/messages', [MessageController::class, 'indexAppliant']);
     Route::get('applicants-users/messages', [MessageController::class, 'indexapplicantuser']);
+    Route::get('/jobs/search', [JobsController::class, 'search']);
 
 
 
@@ -204,6 +209,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/process-application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
+        Route::get('/applications/{jobId}', [JobApplicationController::class, 'show']);
+
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
         Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);
         Route::delete('/jobs/{jobId}/applicants/{userId}', [JobApplicationController::class, 'destroy']);
@@ -218,8 +225,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('employer/saved-candidates/{id}', [CandidatesController::class, 'show']);
         Route::resource('employer/companies', CompaniesController::class);
         Route::post('/employer/candidates/{userId}/send-email', [CandidatesController::class, 'sendEmailToCandidate']);
-
-
     });
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {

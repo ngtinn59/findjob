@@ -86,16 +86,19 @@ class JobSeekersController extends Controller
 
     public function apply(Request $request, $id)
     {
+        // Kiểm tra công việc có tồn tại không
         $job = Job::find($id);
         if (!$job) {
             return response()->json(['message' => 'Công việc không tồn tại.'], 404);
         }
 
+        // Kiểm tra người dùng đã đăng nhập chưa
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        // Kiểm tra xem người dùng đã ứng tuyển công việc này chưa
         if ($job->users()->where('users.id', $user->id)->exists()) {
             return response()->json([
                 'message' => 'Bạn đã ứng tuyển công việc này rồi.',
@@ -103,12 +106,33 @@ class JobSeekersController extends Controller
             ], 409);
         }
 
-        // Kiểm tra xem người dùng đã chọn CV có sẵn hay upload CV mới
         if ($request->has('selected_cv_id')) {
-            // Người dùng chọn một CV có sẵn
+            // Người dùng chọn CV có sẵn
             $selectedCv = Objective::find($request->selected_cv_id);
+            if (!$selectedCv) {
+                return response()->json(['message' => 'CV đã chọn không tồn tại.'], 404);
+            }
 
-            $cvFileName = $selectedCv->file;
+            // Lấy file từ CV đã chọn và tạo tên file mới
+            $cvFileName = time() . '_' . basename($selectedCv->file);
+            $sourcePath = public_path('cvs/' . $selectedCv->file); // Đường dẫn đầy đủ của file trong public/cvs
+            $cvFileName = time() . '_' . basename($selectedCv->file); // Tên file mới để lưu vào storage
+
+            if (file_exists($sourcePath)) {
+                try {
+                    // Đọc nội dung file từ public/cvs
+                    $fileContents = file_get_contents($sourcePath);
+
+                    // Lưu nội dung file vào storage/app/public/cv với tên mới
+                    Storage::disk('public')->put('cv/' . $cvFileName, $fileContents);
+                } catch (\Exception $e) {
+                    return response()->json(['message' => 'Lỗi khi sao chép file CV: ' . $e->getMessage()], 500);
+                }
+            } else {
+                return response()->json(['message' => 'File CV không tồn tại.'], 404);
+            }
+
+
         } elseif ($request->hasFile('cv')) {
             // Người dùng tải lên CV mới
             $cv = $request->file('cv');
@@ -119,10 +143,16 @@ class JobSeekersController extends Controller
             return response()->json(['message' => 'Vui lòng chọn hoặc tải lên CV.'], 400);
         }
 
+
         // Lấy thông tin name, phone, email từ request
         $name = $request->input('name');
         $phone = $request->input('phone');
         $email = $request->input('email');
+
+        // Kiểm tra nếu thiếu thông tin
+        if (!$name || !$phone || !$email) {
+            return response()->json(['message' => 'Vui lòng cung cấp đủ thông tin cá nhân.'], 400);
+        }
 
         // Tiếp tục quá trình ứng tuyển
         Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
@@ -132,13 +162,10 @@ class JobSeekersController extends Controller
         $job->users()->attach($user->id, [
             'status' => 'pending',
             'cv' => $cvFileName,
-            'name' => $name,     // Thêm trường name
-            'phone' => $phone,   // Thêm trường phone
-            'email' => $email    // Thêm trường email
+            'name' => $name,
+            'phone' => $phone,
+            'email' => $email
         ]);
-
-        // Gửi thông báo cho nhà tuyển dụng
-        // $job->company->notify(new JobApplicationSubmitted($job, $user));
 
         return response()->json([
             'success' => true,
@@ -146,6 +173,7 @@ class JobSeekersController extends Controller
             'status_code' => 200,
         ], 200);
     }
+
 
     public function getUserCvs(Request $request)
     {
@@ -159,7 +187,8 @@ class JobSeekersController extends Controller
             return [
                 'id' => $cv->id,
                 'desired_position' => $cv->desired_position,
-                'attached_file' => $cv->file ? 'Hồ sơ đính kèm' : 'Hồ sơ trực tuyến', // Lấy URL tệp đính kèm
+                'attached_file' => $cv->file ? 'Hồ sơ đính kèm' : 'Hồ sơ trực tuyến',
+                'file' => asset('cvs/' . $cv->file),
             ];
         });
 

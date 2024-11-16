@@ -54,8 +54,4 @@ class EmployerMailController extends Controller
             'message' => 'Email đã được gửi đến ứng viên thành công.',
         ], 200);
     }
-
-
-
-
 }
