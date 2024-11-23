@@ -18,7 +18,6 @@ class JobsController extends Controller
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-
                 'salary' => $job->salary,
                 'company' => $job->company ? $job->company->name : null,
                 'status' => $job->status,

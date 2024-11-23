@@ -448,12 +448,19 @@ class CompaniesController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'is_hot' => ($job->views > 100) ? 1 : 0,
-                'company' => $job->company->company_name,
+                'company' => [
+                    'id' => $job->company->id,
+                    'name' => $job->company->company_name,
+                    'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                ],
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
                 ],
-                'city' => $job->city->name,
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name,
+                ],
                 'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
             ];
         });        // Tạo dữ liệu chi tiết công ty

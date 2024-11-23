@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Mail\JobApplied;
 use App\Models\Company;
 use App\Models\Job;
+use App\Models\Keyword;
 use App\Utillities\Constant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -421,10 +423,9 @@ class JobsController extends Controller
 
         // Lấy tất cả công việc, có thể thêm quan hệ với công ty, thành phố và ngành nghề nếu cần
         $results = $jobs->with(['company', 'city', 'profession'])
-            ->paginate(10); // Phân trang 10 công việc mỗi trang
+            ->get(); // Phân trang 10 công việc mỗi trang
 
         // Lấy công việc đề xuất
-        $suggestedJobs = $this->getSuggestedJobs();
 
         // Trả về kết quả dưới dạng JSON
         return response()->json([
@@ -435,24 +436,28 @@ class JobsController extends Controller
                         'id' => $job->id,
                         'title' => $job->title,
                         'featured' => $job->featured,
-                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
-                        'company' => $job->company->company_name,
-                        'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null, // Full path to logo or null if it doesn't exist
+                        'is_hot' => ($job->views > 100) ? 1 : 0,
+                        'company' => [
+                            'id' => $job->company->id,
+                            'name' => $job->company->company_name,
+                            'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                        ],
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
                         ],
-                        'city' => $job->city->name,
+                        'city' => [
+                            'id' => $job->city->id,
+                            'name' => $job->city->name,
+                        ],
                         'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
                     ];
                 }),
-                'suggested_jobs' => $suggestedJobs,
             ],
-            'current_page' => $results->currentPage(),
-            'last_page' => $results->lastPage(),
-            'total' => $results->total(),
+
         ]);
     }
+
 
 
     public function showJob(Job $job)
@@ -463,6 +468,11 @@ class JobsController extends Controller
         // Tải thêm thông tin liên quan (nếu cần)
         $jobDetails = $job->load(['company', 'profession', 'employmentType', 'experienceLevel', 'educationLevel', 'city', 'district', 'country', 'desiredLevel', 'workplace']);
 
+        $user = Auth::check() ? Auth::user() : null;
+        $isSaved = $user ? $user->favorites()->where('job_id', $job->id)->exists() : false;
+
+        $isApplied = $user ? $user->checkApplication()->where('job_id', $job->id)->exists() : false;
+        // Lấy công việc liên quan
         $relatedJobs = $this->getRelatedJobs($job);
 
         $relatedJobsData = $relatedJobs->map(function ($relatedJob) {
@@ -472,11 +482,14 @@ class JobsController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'is_hot' => ($job->views > 100) ? 1 : 0,
-                'company' => $job->company->company_name,
-                'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                'company' => [
+                    'id' => $job->company->id,
+                    'name' => $job->company->company_name,
+                    'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                ],
                 'salary' => [
                     'salary_from' => $job->salary_from,
-                    'salary_to' => $job->salary_to,
+                    'salary_to' => $job->salary_to
                 ],
                 'city' => [
                     'id' => $job->city->id,
@@ -486,13 +499,13 @@ class JobsController extends Controller
             ];
         })->values(); // Sử dụng values() để đảm bảo kết quả là một mảng.
 
-
-
         $dataRespone = [
             'id' => $job->id,
+            'is_saved' => $isSaved,
+            'is_applied' => $isApplied, // Thêm thông tin đã lưu hay chưa
             'company' => [
-                'id' =>$job->Company->id,
-                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
+                'id' => $job->Company->id,
+                'logo' => asset('uploads/images/' . $job->company->logo),
                 'name' => $job->Company->company_name,
                 'size' => $job->Company->companysize->name,
             ],
@@ -600,12 +613,20 @@ class JobsController extends Controller
 
     public function search(Request $request)
     {
-        // Nhận các tham số từ request
+        // Nhận tham số từ request
         $keyword = $request->input('keyword');
         $professionId = $request->input('profession_id');
         $cityId = $request->input('city_id');
 
-        // Bắt đầu truy vấn
+        // Ghi nhận từ khóa tìm kiếm
+        if ($keyword) {
+            Keyword::updateOrCreate(
+                ['keyword' => $keyword],
+                ['search_count' => \DB::raw('search_count + 1')]
+            );
+        }
+
+        // Bắt đầu truy vấn công việc
         $jobs = Job::query();
 
         // Tìm kiếm theo từ khóa
@@ -626,14 +647,13 @@ class JobsController extends Controller
             $jobs->where('city_id', $cityId);
         }
 
-        // Thực hiện truy vấn và phân trang kết quả
-        $results = $jobs->with(['company', 'city', 'profession'])
-            ->get(); // Phân trang 10 công việc mỗi trang
+        // Lấy công việc và phân trang
+        $results = $jobs->with(['company', 'city', 'profession'])->get();
 
         // Lấy công việc đề xuất
         $suggestedJobs = $this->getSuggestedJobs();
 
-        // Trả về kết quả dưới dạng JSON
+        // Trả về JSON
         return response()->json([
             'success' => true,
             'data' => [
@@ -643,8 +663,11 @@ class JobsController extends Controller
                         'title' => $job->title,
                         'featured' => $job->featured,
                         'is_hot' => ($job->views > 100) ? 1 : 0,
-                        'company' => $job->company->company_name,
-                        'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                        'company' => [
+                            'id' => $job->company->id,
+                            'name' => $job->company->company_name,
+                            'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                        ],
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
@@ -660,7 +683,6 @@ class JobsController extends Controller
             ],
         ]);
     }
-
 
     private function getSuggestedJobs()
     {
@@ -768,8 +790,11 @@ class JobsController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'is_hot' => ($job->views > 100) ? 1 : 0,
-                'company' => $job->company->company_name,
-                'logo' => asset('uploads/images/' . $job->company->logo),
+                'company' => [
+                    'id' => $job->company->id,
+                    'name' => $job->company->company_name,
+                    'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                ],
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
@@ -913,18 +938,27 @@ class JobsController extends Controller
             ];
 
             $status = $job->pivot->status;
-            $formattedStatus = isset($statusMap[$status]) ? $statusMap[$status] : 'Trạng thái không xác định'; // Nếu trạng thái không có trong map thì hiển thị thông báo
 
             return [
                 'id' => $job->id,
-                'company' => $company ? $company->company_name : null,
-                'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
                 'title' => $job->title,
-                'city' => $city ? $city->name : null, // Kiểm tra xem thành phố có tồn tại không trước khi truy cập trường name
-                'salary_to' => $job->salary_to,
-                'salary_from' => $job->salary_from,
-                'status' => $formattedStatus, // Sử dụng trạng thái đã được định dạng
-                'last_date' => $job->last_date,
+                'featured' => $job->featured,
+                'is_hot' => ($job->views > 100) ? 1 : 0,
+                'status' => $status,
+                'company' => [
+                    'id' => $job->company->id,
+                    'name' => $job->company->company_name,
+                    'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                ],
+                'salary' => [
+                    'salary_from' => $job->salary_from,
+                    'salary_to' => $job->salary_to
+                ],
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name,
+                ],
+                'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
             ];
         });
 
@@ -956,9 +990,12 @@ class JobsController extends Controller
                         'id' => $job->id,
                         'title' => $job->title,
                         'featured' => $job->featured,
-                        'is_hot' => ($job->views > 100) ? 1 : 0, // Kiểm tra lượt xem
-                        'company' => $job->company->company_name,
-                        'logo' => asset('uploads/images/' . $job->company->logo), // Đường dẫn đầy đủ tới logo
+                        'is_hot' => ($job->views > 100) ? 1 : 0,
+                        'company' => [
+                            'id' => $job->company->id,
+                            'name' => $job->company->company_name,
+                            'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                        ],
                         'salary' => [
                             'salary_from' => $job->salary_from,
                             'salary_to' => $job->salary_to
@@ -973,5 +1010,20 @@ class JobsController extends Controller
             ],
         ]);
     }
+
+    public function getTrendingKeywords()
+    {
+        $trendingKeywords = Keyword::where('updated_at', '>=', now()->subDays(30))
+            ->orderBy('search_count', 'desc')
+            ->limit(5)
+            ->get(['id','keyword', 'search_count']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Trending keywords',
+            'data' => $trendingKeywords,
+        ]);
+    }
+
 
 }

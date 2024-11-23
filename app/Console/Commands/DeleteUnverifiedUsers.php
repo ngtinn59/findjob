@@ -30,7 +30,7 @@ class DeleteUnverifiedUsers extends Command
     public function handle()
     {
         // Thời gian chưa xác nhận email (Ví dụ: 1 phút)
-        $minutesLimit = 1;
+        $minutesLimit = 60;
 
         // Lấy tất cả người dùng chưa xác nhận email và tạo trước $minutesLimit phút
         $users = User::whereNull('email_verified_at')

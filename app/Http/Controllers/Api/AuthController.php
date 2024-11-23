@@ -293,4 +293,58 @@ class AuthController extends Controller
             'status_code' => 200,
         ]);
     }
+
+    public function updateName(Request $request)
+    {
+        // Xác thực dữ liệu từ request
+        $validator = Validator::make($request->all(), [
+            'new_name' => 'required|string|max:255',
+        ], [
+            'new_name.required' => 'Vui lòng nhập tên mới.',
+            'new_name.string' => 'Tên phải là một chuỗi ký tự.',
+            'new_name.max' => 'Tên không được vượt quá 255 ký tự.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => $validator->errors(),
+                'status_code' => 422,
+            ], 422);
+        }
+
+        try {
+            // Lấy người dùng hiện tại từ Auth
+            $user = Auth::user();
+
+            // Cập nhật tên người dùng
+            $user->update([
+                'name' => $request->new_name,
+            ]);
+
+            // Cập nhật tên trong bảng profile nếu cần
+            User::where('id', $user->id)->update([
+                'name' => $request->new_name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tên tài khoản đã được cập nhật thành công.',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ],
+                'status_code' => 200,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Cập nhật tên thất bại: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Cập nhật tên thất bại. Vui lòng thử lại sau.',
+                'status_code' => 500,
+            ], 500);
+        }
+    }
+
 }

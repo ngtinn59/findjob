@@ -107,6 +107,7 @@ Route::get('/openapi.json', function () {
 
 
 
+Route::get('/keyword', [JobsController::class, 'getTrendingKeywords']);
 
 // Public Routes
 Route::get('/countries', [PublicDataController::class, 'getCountries']);
@@ -132,7 +133,6 @@ Route::get('desired-levels', [PublicDataController::class, 'getDesiredLevels']);
 Route::get('experience-levels', [PublicDataController::class, 'getExperienceLevels']);
 Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
 Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
-Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
 Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
 Route::get('/list-jobs', [JobsController::class, 'indexShow']);
 Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
@@ -150,6 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
     Route::delete('logout', [AuthController::class, 'logout']);
+    Route::post('/update-name', [AuthController::class, 'updateName']);
 
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
@@ -160,6 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('applicants/messages', [MessageController::class, 'indexAppliant']);
     Route::get('applicants-users/messages', [MessageController::class, 'indexapplicantuser']);
     Route::get('/jobs/search', [JobsController::class, 'search']);
+    Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
 
 
 
