@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Candidates;
 
+use App\Events\JobApplicationReceived;
 use App\Http\Controllers\Controller;
 use App\Mail\JobApplied;
 use App\Models\Job;
@@ -160,8 +161,19 @@ class JobSeekersController extends Controller
         }
 
         // Tiếp tục quá trình ứng tuyển
+        // Step 1: Send the email to the user
         Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
+
+// Step 2: Notify the company about the job application
         $job->company->notify(new JobApplicationSubmitted($job, $user, $name, $phone, $email));
+
+// Step 3: Fetch the latest notification for the company
+        $notification = $job->company->notifications()->latest()->first();
+
+// Step 4: Broadcast the job application received event with the notification data
+        broadcast(new JobApplicationReceived($job, $user, $notification))->toOthers();
+
+
 
         // Thêm thông tin vào bảng job_user
         $job->users()->attach($user->id, [

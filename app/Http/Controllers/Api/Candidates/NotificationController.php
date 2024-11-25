@@ -20,17 +20,13 @@ class NotificationController extends Controller
         $customNotifications = $notifications->map(function ($notification) {
             return [
                 'id' => $notification->id,
-                'data' => $notification->data, // Dữ liệu thông báo
-                'read' => $notification->read_at ? true : false, // Kiểm tra xem thông báo đã đọc hay chưa
+                'message' => $notification->data['message'], // Dữ liệu thông báo
+                'read' => $notification->read_at,
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'), // Định dạng thời gian
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'notifications' => $customNotifications, // Sử dụng dữ liệu tùy chỉnh
-            'status_code' => 200,
-        ], 200);
+        return response()->json($customNotifications);
     }
 
 

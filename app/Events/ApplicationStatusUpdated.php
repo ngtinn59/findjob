@@ -50,18 +50,10 @@ class ApplicationStatusUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'notifications' => [
-                'notifiable_id' => $this->notification->id,
-                'data' => [
-                    'job_id' => $this->jobId,
-                    'job_title' => $this->job->title,
-                    'status' => $this->status,
-                    'message' => 'Trạng thái đơn ứng tuyển của bạn đã được cập nhật.'
-                ],
-                'read' => $this->notification->read_at ? true : false, // Kiểm tra xem thông báo đã đọc hay chưa
-                'created_at' => $this->notification->created_at->format('Y-m-d H:i:s'), // Định dạng thời gian
-            ]
-
+            'id' => $this->notification->id,
+            'message' => "Trạng thái ứng tuyển của công việc \"{$this->job->title}\" đã được cập nhật.",
+            'read_at' => $this->notification->read_at,
+            'created_at' => $this->notification->created_at->format('Y-m-d H:i:s'),
         ];
     }
 

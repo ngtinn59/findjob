@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\Companies;
 
+use App\Events\JobCreated;
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Mail\JobApplied;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\Keyword;
+use App\Models\User;
+use App\Notifications\JobNotification;
 use App\Utillities\Constant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -164,7 +168,27 @@ class JobsController extends Controller
         $validatedData['company_id'] = $company;
         $validatedData['status'] = $statusJob; // Job is initially inactive
 
-        $job = Job::create($validatedData); // Assuming you have a Job model
+        // Create the job
+        $job = Job::create($validatedData);
+
+        // Notify all admins
+        $admins = User::where('account_type', '3')->get();
+        foreach ($admins as $admin) {
+            // Send notification to each admin
+            $admin->notify(new JobNotification($job)); // JobNotification is the notification class
+        }
+
+        // After notifying, retrieve the latest notification for each admin (assuming notifications are stored correctly)
+        foreach ($admins as $admin) {
+            // Retrieve the most recent notification
+            $notification = $admin->notifications()->latest()->first();
+
+            // Broadcast the event with the job and notification data
+            broadcast(new JobCreated($job,$notification))->toOthers();
+        }
+
+
+
 
         // Custom response after successful job creation
         return response()->json([
@@ -831,21 +855,14 @@ class JobsController extends Controller
 
         $customData = $notifications->map(function ($notification) {
             return [
-                'notification_id' => $notification->id,
-                'job_id' => $notification->data['job_id'],
-                'job_title' => $notification->data['job_title'],
-                'user_name' => $notification->data['user_name'],
+                'id' => $notification->id,
+                'message' => $notification->data['message'],
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lấy thông báo thành công',
-            'data' => $customData,
-            'status_code' => 200
-        ]);
+        return response()->json($customData);
     }
 
 
@@ -877,10 +894,8 @@ class JobsController extends Controller
 
             // Tùy chỉnh dữ liệu thông báo
             $customData = [
-                'notification_id' => $notification->id,
-                'job_id' => $notification->data['job_id'],
-                'job_title' => $notification->data['job_title'],
-                'user_name' => $notification->data['user_name'],
+                'id' => $notification->id,
+                'message' => $notification->data['message'],
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
             ];
@@ -892,10 +907,8 @@ class JobsController extends Controller
             // Tùy chỉnh dữ liệu cho tất cả thông báo vừa đánh dấu là đã đọc
             $customData = $unreadNotifications->map(function ($notification) {
                 return [
-                    'notification_id' => $notification->id,
-                    'job_id' => $notification->data['job_id'],
-                    'job_title' => $notification->data['job_title'],
-                    'user_name' => $notification->data['user_name'],
+                    'id' => $notification->id,
+                    'message' => $notification->data['message'],
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
                 ];
@@ -910,6 +923,34 @@ class JobsController extends Controller
         ]);
     }
 
+    public function destroyNotifications(Request $request, $id)
+    {
+        $user = auth()->user();
+        $companyId =  $user->companies->id;
+        // Tìm công ty dựa trên ID
+        $company = Company::find($companyId);
+        if (!$company) {
+            return response()->json(['message' => 'Công ty không tồn tại.'], 404);
+        }
+
+
+        $notification = $company->notifications()->where('id', $id)->first();
+
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Thông báo không tồn tại hoặc không thuộc quyền sở hữu của bạn.'
+            ], 404);
+        }
+
+        // Xóa thông báo
+        $notification->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thông báo đã được xóa thành công.',
+        ], 200);
+    }
 
 
     public function applicant()

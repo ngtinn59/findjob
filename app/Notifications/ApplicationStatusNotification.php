@@ -52,10 +52,8 @@ class ApplicationStatusNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'job_id' => $this->job->id,
-            'job_title' => $this->job->title,
-            'status' => $this->status,
-            'message' => 'Trạng thái đơn ứng tuyển của bạn đã được cập nhật.',
+            'message' => "Trạng thái ứng tuyển của công việc \"{$this->job->title}\" đã được cập nhật."
         ];
     }
+
 }

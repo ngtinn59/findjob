@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
     AdminCompanyTypesController,
     AdminController,
     AdminJobController,
+    AdminNotificationController,
     AdminStatsController,
     AdminUserController,
     CitiesController,
@@ -206,6 +207,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('employer/jobs', JobsController::class);
         Route::get('employer/companies/notifications', [JobsController::class, 'getNotifications']);
         Route::post('employer/companies/notifications/read', [JobsController::class, 'markAsRead']);
+        Route::delete('employer/companies/notifications/{id}', [JobsController::class, 'destroyNotifications']); // Xóa thông báo
 
         Route::post('/jobs/{jobId}/applicants/{userId}/send-email', [EmployerMailController::class, 'sendEmailToApplicant']);
 
@@ -288,6 +290,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Đánh dấu công ty là nổi bật
         Route::post('companies/{companyId}/mark-as-hot', [AdminCompaniesController::class, 'markAsHot']);
         Route::post('companies/{companyId}/mark-as-not-hot', [AdminCompaniesController::class, 'markAsNotHot']);
-
+        Route::get('/notifications', [AdminNotificationController::class, 'index']); // Lấy danh sách thông báo
+        Route::post('/notifications/read/{id}', [AdminNotificationController::class, 'markAsRead']); // Đọc thông báo
+        Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']); // Xóa thông báo
     });
 });
