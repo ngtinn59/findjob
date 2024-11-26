@@ -118,6 +118,7 @@ Route::get('/workplaces', [PublicDataController::class, 'getWorkPlaces']);
 Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
 Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
 Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);
+Route::get('/statistic', [AdminStatsController::class, 'index']);
 
 Route::get('/company-sizes', [PublicDataController::class, 'getCompanySizes']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
@@ -159,6 +160,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
     Route::get('messages', [MessageController::class, 'index']);
+    Route::get('messages-employer', [MessageController::class, 'indexEmployer']);
+
     Route::get('applicants/messages', [MessageController::class, 'indexAppliant']);
     Route::get('applicants-users/messages', [MessageController::class, 'indexapplicantuser']);
     Route::get('/jobs/search', [JobsController::class, 'search']);
@@ -170,6 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('profile', ProfilesController::class);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{notificationId}', [NotificationController::class, 'deleteNotification']);
 
     Route::prefix('profiles')->group(function () {
         Route::resource('/educations', EducationController::class);
@@ -261,7 +265,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         //Thống kê
 
-        Route::get('/statistics', [AdminStatsController::class, 'index']);
         Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
         Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
         Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);

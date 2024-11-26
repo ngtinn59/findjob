@@ -48,7 +48,7 @@ class AdminStatsController extends Controller
             'total_companies' => $totalCompanies,
             'jobs_by_date' => $jobsByDate,
             'total_employer' => $usersEmployer,
-            'usersEmployer' => $usersDeveloper,
+            'Job_Seekers' => $usersDeveloper,
             'jobsByLocation' => $jobsByLocation,
 
         ];
