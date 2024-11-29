@@ -133,7 +133,7 @@ class MessageController extends Controller
                 'id' => $otherUser->id,
                 'name' => $otherUser->name,
                 'email' => $otherUser->email,
-                'logo' => $otherUser->profile?->image ? url('uploads/images' . $otherUser->profile->image) : null, // Lấy logo nếu tồn tại
+                'logo' => $otherUser->profile?->image ? url('uploads/images/' . $otherUser->profile->image) : null, // Lấy logo nếu tồn tại
                 'last_message' => $lastMessage->message,
                 'last_message_time' => $lastMessage->created_at->toDateTimeString(),
             ];
@@ -174,7 +174,7 @@ class MessageController extends Controller
                 return [
                     'id' => $applicant->id,
                     'name' => $applicant->pivot->name,
-                    'logo' => $applicant->profile?->image ? url('uploads/images' . $applicant->profile->image) : null, // Lấy logo nếu tồn tại
+                    'logo' => $applicant->profile?->image ? url('uploads/images/' . $applicant->profile->image) : null, // Lấy logo nếu tồn tại
                 ];
             });
         });
@@ -229,7 +229,4 @@ class MessageController extends Controller
             'status_code' => 200
         ], 200);
     }
-
-
-
 }
