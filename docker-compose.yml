@@ -1,6 +1,5 @@
 version: '3'
 services:
-
     # PHP Service
     app:
         build:
@@ -19,6 +18,8 @@ services:
             - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
         networks:
             - app-network
+        depends_on:
+            - db
 
     # Nginx Service
     webserver:
@@ -44,8 +45,8 @@ services:
         ports:
             - "3306:3306"
         environment:
-            MYSQL_DATABASE: laravel
-            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: find-job
+            MYSQL_ROOT_PASSWORD: 05090712
             SERVICE_TAGS: dev
             SERVICE_NAME: mysql
         volumes:

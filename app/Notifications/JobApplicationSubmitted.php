@@ -35,19 +35,13 @@ class JobApplicationSubmitted extends Notification
      */
     public function via($notifiable)
     {
-        return ['database', 'mail']; // Có thể thêm 'mail' nếu bạn muốn gửi qua email
+        return ['database', 'mail'];
     }
 
     public function toArray($notifiable)
     {
         return [
-            'job_id' => $this->job->id,
-            'job_title' => $this->job->title,
-            'user_id' => $this->user->id,
-            'user_name' => $this->user->name,
-            'applicant_name' => $this->name,  // Thông tin name
-            'applicant_phone' => $this->phone,  // Thông tin phone
-            'applicant_email' => $this->email  // Thông tin email
+            'message' => "Ứng viên {$this->name} đã ứng tuyển vị trí {$this->job->title}.",
         ];
     }
 

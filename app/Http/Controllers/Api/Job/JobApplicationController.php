@@ -42,36 +42,18 @@ class   JobApplicationController extends Controller
         // Lấy công ty đầu tiên của người dùng (nếu có nhiều công ty, điều này cần được điều chỉnh)
         $companyId = $user->companies->id;
 
-        // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại với phân trang
-        $jobs = Job::with(['applicants' => function ($query) {
-            // Bao gồm các trường trong bảng pivot
-            $query->withPivot('status', 'cv', 'name', 'phone', 'email', 'created_at');
-        }])->where('company_id', $companyId)->paginate(10); // Số lượng công việc mỗi trang là 10
+        // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại và có ứng viên
+        $jobs = Job::where('company_id', $companyId)
+            ->withCount('applicants') // Đếm số lượng ứng viên
+            ->having('applicants_count', '>', 0) // Chỉ lấy công việc có ứng viên
+            ->get();
 
-        // Chuyển đổi dữ liệu công việc và ứng viên
+        // Chuyển đổi dữ liệu công việc
         $jobsData = $jobs->map(function ($job) {
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'applicants' => $job->applicants->map(function ($applicant) {
-                    $statusMap = [
-                        'pending'      => 'Chờ xác nhận',
-                        'contacted'    => 'Đã liên hệ',
-                        'test_round'   => 'Vòng test',
-                        'interview'    => 'Vòng phỏng vấn',
-                        'hired'        => 'Trúng tuyển',
-                        'not_selected' => 'Không trúng tuyển'
-                    ];
-
-                    return [
-                        'id' => $applicant->id,
-                        'name' => $applicant->pivot->name,  // Lấy tên từ bảng pivot nếu có
-                        'email' => $applicant->pivot->email,  // Lấy email từ bảng pivot nếu có
-                        'status' => $statusMap[$applicant->pivot->status] ?? $applicant->pivot->status,  // Chuyển đổi trạng thái theo enum
-                        'cv' => $applicant->pivot->cv ? url('storage/cv/' . $applicant->pivot->cv) : null,
-                        'created_at' => $applicant->pivot->created_at ? Carbon::parse($applicant->pivot->created_at)->format('Y-m-d H:i:s') : null,  // Định dạng created_at
-                    ];
-                }),
+                'applicant_count' => $job->applicants_count, // Số lượng ứng viên
             ];
         });
 
@@ -79,17 +61,11 @@ class   JobApplicationController extends Controller
             'success' => true,
             'message' => 'Lấy dữ liệu thành công',
             'data' => $jobsData,
-            'pagination' => [
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'previous_page_url' => $jobs->previousPageUrl(),
-            ],
             'status_code' => 200
         ]);
     }
+
+
 
 
     /**
@@ -142,20 +118,30 @@ class   JobApplicationController extends Controller
             ], 404);
         }
 
+        $statusMap = [
+            'pending'      => 'Chờ xác nhận',
+            'contacted'    => 'Đã liên hệ',
+            'test_round'   => 'Vòng test',
+            'interview'    => 'Vòng phỏng vấn',
+            'hired'        => 'Trúng tuyển',
+            'not_selected' => 'Không trúng tuyển'
+        ];
+
         $jobData = [
             'id' => $job->id,
             'title' => $job->title,
             'created_at' => $job->created_at->diffForHumans(),
-            'applicants' => $job->applicants->map(function ($applicant) {
+            'applicants' => $job->applicants->map(function ($applicant) use ($statusMap) {
                 return [
                     'id' => $applicant->id,
                     'name' => $applicant->name,
                     'email' => $applicant->email,
                     'status' => $applicant->pivot->status,
-                    'cv' => $applicant->pivot->cv ? asset('app/public/to/cv/' . $applicant->pivot->cv) : null,
+                    'cv' => $applicant->pivot->cv ? url('storage/cv/' . $applicant->pivot->cv) : null,
                 ];
             }),
         ];
+
 
         return response()->json([
             'success' => true,
@@ -304,29 +290,23 @@ class   JobApplicationController extends Controller
             $query->withPivot('status', 'cv', 'name', 'email'); // Include pivot table fields
         }])->find($jobId);
 
-        $statusMap = [
-            'pending'      => 'Chờ xác nhận',
-            'contacted'    => 'Đã liên hệ',
-            'test_round'   => 'Vòng test',
-            'interview'    => 'Vòng phỏng vấn',
-            'hired'        => 'Trúng tuyển',
-            'not_selected' => 'Không trúng tuyển'
-        ];
+
 
         $jobData = [
             'id' => $job->id,
             'title' => $job->title,
             'created_at' => $job->created_at->diffForHumans(),
-            'applicants' => $job->applicants->map(function ($applicant) use ($statusMap) {
+            'applicants' => $job->applicants->map(function ($applicant) {
                 return [
                     'id' => $applicant->id,
                     'name' => $applicant->pivot->name,
                     'email' => $applicant->pivot->email,
-                    'status' => $statusMap[$applicant->pivot->status] ?? 'Chưa xác định', // Thêm trạng thái đã được dịch
+                    'status' => $applicant->pivot->status,
                     'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
                 ];
             }),
         ];
+
 
 
         return response()->json([

@@ -22,26 +22,37 @@ class CompaniesController extends Controller
         $user = auth()->user();
 
         // Retrieve companies associated with the user
-        $companies = $user->companies()->with(['companyType', 'companySize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
-            $query->where('status', 1);
-        }])->get();
+        $companies = $user->companies()->with([
+            'companyType', 'companySize', 'country', 'city', 'district', 'jobs',
+            'skills' => function ($query) use ($user) {
+                $query->where('status', 1);
+            }
+        ])->get();
 
         // Map the company data
         $companiesData = $companies->map(function ($company) {
-            $companyType = optional($company->companyType)->name;
-            $companySize = optional($company->companySize)->name;
-            $country = optional($company->country)->name;
-            $city = optional($company->city)->name;
-            $district = optional($company->district)->name;
-
-
             return [
                 'id' => $company->id,
-                'country' => $country,
-                'city' => $city,
-                'district' => $district,
-                'companyType' => $companyType,
-                'companySize' => $companySize,
+                'country' => [
+                    'id' => $company->country->id ?? null,
+                    'name' => $company->country->name ?? null,
+                ],
+                'city' => [
+                    'id' => $company->city->id ?? null,
+                    'name' => $company->city->name ?? null,
+                ],
+                'district' => [
+                    'id' => $company->district->id ?? null,
+                    'name' => $company->district->name ?? null,
+                ],
+                'companyType' => [
+                    'id' => $company->companyType->id ?? null,
+                    'name' => $company->companyType->name ?? null,
+                ],
+                'companySize' => [
+                    'id' => $company->companySize->id ?? null,
+                    'name' => $company->companySize->name ?? null,
+                ],
                 'name' => $company->company_name,
                 'phone' => $company->phone,
                 'company_email' => $company->company_email,
@@ -53,8 +64,8 @@ class CompaniesController extends Controller
                 'facebook' => $company->facebook,
                 'youtube' => $company->youtube,
                 'linked' => $company->linked,
-                'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
-                'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
+                'logo' => $company->logo ? asset('uploads/images/' . $company->logo) : null, // Full path to logo if exists
+                'banner' => $company->banner ? asset('uploads/images/' . $company->banner) : null, // Full path to banner if exists
                 'address' => $company->address,
                 'latitude' => $company->latitude,
                 'longitude' => $company->longitude,
@@ -68,6 +79,7 @@ class CompaniesController extends Controller
             'data' => $companiesData
         ], 200);
     }
+
 
 
     /**
@@ -134,11 +146,26 @@ class CompaniesController extends Controller
 
         $companyData = [
             'id' => $company->id,
-            'country' => $country,
-            'city' => $city,
-            'district' => $district,
-            'companySize' => $companySize,
-            'companyType' => $companyType,
+            'country' => [
+                'id' => $company->country->id ?? null,
+                'name' => $company->country->name ?? null,
+            ],
+            'city' => [
+                'id' => $company->city->id ?? null,
+                'name' => $company->city->name ?? null,
+            ],
+            'district' => [
+                'id' => $company->district->id ?? null,
+                'name' => $company->district->name ?? null,
+            ],
+            'companyType' => [
+                'id' => $company->companyType->id ?? null,
+                'name' => $company->companyType->name ?? null,
+            ],
+            'companySize' => [
+                'id' => $company->companySize->id ?? null,
+                'name' => $company->companySize->name ?? null,
+            ],
             'name' => $company->company_name,
             'phone' => $company->phone,
             'company_email' => $company->company_email,
@@ -150,8 +177,8 @@ class CompaniesController extends Controller
             'facebook' => $company->facebook,
             'youtube' => $company->youtube,
             'linked' => $company->linked,
-            'logo' => asset('uploads/images/' . $company->logo), // Full path to logo
-            'banner' => asset('uploads/images/' . $company->banner), // Full path to banner
+            'logo' => $company->logo ? asset('uploads/images/' . $company->logo) : null, // Full path to logo if exists
+            'banner' => $company->banner ? asset('uploads/images/' . $company->banner) : null, // Full path to banner if exists
             'address' => $company->address,
             'latitude' => $company->latitude,
             'longitude' => $company->longitude,
@@ -369,8 +396,14 @@ class CompaniesController extends Controller
             return [
                 'id' => $company->id,
                 'name' => $company->company_name,
-                'companytype' => $companyType,
-                'companySize' => $companySize,
+                'companyType' => [
+                    'id' => $company->companyType->id ?? null,
+                    'name' => $company->companyType->name ?? null,
+                ],
+                'companySize' => [
+                    'id' => $company->companySize->id ?? null,
+                    'name' => $company->companySize->name ?? null,
+                ],
                 'logo' => asset('uploads/images/' . $company->logo),
                 'banner' => asset('uploads/images/' . $company->banner),
                 'country' => $country,
@@ -415,40 +448,61 @@ class CompaniesController extends Controller
                 'title' => $job->title,
                 'featured' => $job->featured,
                 'is_hot' => ($job->views > 100) ? 1 : 0,
-                'company' => $job->company->company_name,
+                'company' => [
+                    'id' => $job->company->id,
+                    'name' => $job->company->company_name,
+                    'logo' => $job->company->logo ? asset('uploads/images/' . $job->company->logo) : null,
+                ],
                 'salary' => [
                     'salary_from' => $job->salary_from,
                     'salary_to' => $job->salary_to
                 ],
-                'city' => $job->city->name,
+                'city' => [
+                    'id' => $job->city->id,
+                    'name' => $job->city->name,
+                ],
                 'last_date' => \Carbon\Carbon::parse($job->last_date)->format('d-m-Y'),
             ];
         });        // Tạo dữ liệu chi tiết công ty
         $companyDetails = [
             'id' => $company->id,
+            'country' => [
+                'id' => $company->country->id ?? null,
+                'name' => $company->country->name ?? null,
+            ],
+            'city' => [
+                'id' => $company->city->id ?? null,
+                'name' => $company->city->name ?? null,
+            ],
+            'district' => [
+                'id' => $company->district->id ?? null,
+                'name' => $company->district->name ?? null,
+            ],
+            'companyType' => [
+                'id' => $company->companyType->id ?? null,
+                'name' => $company->companyType->name ?? null,
+            ],
+            'companySize' => [
+                'id' => $company->companySize->id ?? null,
+                'name' => $company->companySize->name ?? null,
+            ],
             'name' => $company->company_name,
-            'company_type' => $companyType,
-            'company_size' => $companySize,
-            'country' => $country,
-            'city' => $city,
-            'district' => $district,
             'phone' => $company->phone,
             'company_email' => $company->company_email,
             'tax_code' => $company->tax_code,
-            'date_of_establishment' => $company->date_of_establishment,
+            'date_of_establishment' => \Carbon\Carbon::parse($company->date_of_establishment)->format('Y-m-d'), // Format date
             'working_days' => $company->working_days,
             'overtime_policy' => $company->overtime_policy,
             'website' => $company->website,
             'facebook' => $company->facebook,
             'youtube' => $company->youtube,
             'linked' => $company->linked,
+            'logo' => $company->logo ? asset('uploads/images/' . $company->logo) : null, // Full path to logo if exists
+            'banner' => $company->banner ? asset('uploads/images/' . $company->banner) : null, // Full path to banner if exists
             'address' => $company->address,
             'latitude' => $company->latitude,
             'longitude' => $company->longitude,
             'description' => $company->description,
-            'is_hot' => $company->is_hot,
-            'logo' => asset('uploads/images/' . $company->logo),
-            'banner' => asset('uploads/images/' . $company->banner),
             'jobs' => $jobsWithStatusActive,
 
         ];
@@ -475,9 +529,12 @@ class CompaniesController extends Controller
                     return [
                         'id' => $company->id,
                         'company_name' => $company->company_name,
-                        'logo' => asset('uploads/images/' . $company->logo),
+                        'logo' => $company->logo ? asset('uploads/images/' . $company->logo) : null,
                         'is_hot' => $company->is_hot,
-                        'city' => $company->city->name,
+                        'city' => [
+                            'id' => $company->city->id,
+                            'name' => $company->city->name,
+                        ],
                         'created_at' => \Carbon\Carbon::parse($company->created_at)->format('d-m-Y'),
                     ];
                 }),

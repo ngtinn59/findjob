@@ -39,7 +39,8 @@ class CandidatesController extends Controller
      */
     public function unsaveCandidate(Request $request, $id)
     {
-        $candidate = Candidate::findOrFail($id);
+
+        $candidate = Objective::findOrFail($id);
         $user = $request->user();
         $user->savedCandidates()->detach($candidate->id);
 
@@ -97,7 +98,13 @@ class CandidatesController extends Controller
             'profile.educations',
             'profile.certificates',
             'profile.skills',
-            'profile.languageskills.language'
+            'profile.languageskills.language',
+            'desiredLevel',
+            'profession',
+            'employmentType',
+            'educationLevel',
+            'country',
+            'city'
         ])->findOrFail($id);
 
         // Tùy chỉnh dữ liệu trả về
@@ -110,36 +117,60 @@ class CandidatesController extends Controller
                 'phone' => $candidate->profile->phone,
                 'email' => $candidate->profile->email,
                 'age' => $candidate->profile->birthday ? Carbon::parse($candidate->profile->birthday)->age : null,
-                'image_url' => url('uploads/images/' . $candidate->profile->image), // Xây dựng URL của hình ảnh
+                'image_url' => url('uploads/images/' . $candidate->profile->image),
                 'gender' => $candidate->profile->gender,
                 'location' => $candidate->profile->location,
                 'website' => $candidate->profile->website,
-                'objective' => [
-                    'desired_position' => $candidate->desired_position,
-                    'desired_level' => $candidate->desiredLevel->name ?? null,
-                    'profession' => $candidate->profession->name ?? null,
-                    'employment_type' => $candidate->employmentType->name ?? null,
-                    'experience_level' => $candidate->experienceLevel->name ?? null,
-                    'work_address' => $candidate->work_address,
-                    'education_level' => $candidate->educationLevel->name ?? null,
-                    'salary_from' => $candidate->salary_from,
-                    'salary_to' => $candidate->salary_to,
-                    'file' => asset('cvs/' . $candidate->file),
-                    'status' => $candidate->status,
-                    'country' => $candidate->country->name ?? null,
-                    'city' => $candidate->city->name ?? null,
-                    'district' => $candidate->district->name ?? null,
+            ],
+            'objective' => [
+                'desired_position' => $candidate->desired_position,
+                'desiredLevel' => [
+                    'id' => $candidate->desiredLevel->id ?? null,
+                    'name' => $candidate->desiredLevel->name ?? null,
+                ],
+                'profession' => [
+                    'id' => $candidate->profession->id ?? null,
+                    'name' => $candidate->profession->name ?? null
+                ],
+                'employmentType' => [
+                    'id' => $candidate->employmentType->id ?? null,
+                    'name' => $candidate->employmentType->name ?? null
+                ],
+                'experienceLevel' => [
+                    'id' => $candidate->experienceLevel->id ?? null,
+                    'name' => $candidate->experienceLevel->name ?? null
+                ],
+                'work_address' => $candidate->work_address,
+                'educationLevel' => [
+                    'id' => $candidate->educationLevel->id ?? null,
+                    'name' => $candidate->educationLevel->name ?? null,
+                ],
+                'salary_from' => $candidate->salary_from,
+                'salary_to' => $candidate->salary_to,
+                'file' => asset('cvs/' . $candidate->file),
+                'status' => $candidate->status,
+                'country' => [
+                    'id' => $candidate->country->id ?? null,
+                    'name' => $candidate->country->name ?? null,
+                ],
+                'city' => [
+                    'id' => $candidate->city->id ?? null,
+                    'name' => $candidate->city->name ?? null
+                ],
+                'district' => [
+                    'id' => $candidate->district->id ?? null,
+                    'name' => $candidate->district->name ?? null,
                 ],
             ],
-
             'aboutme' => $candidate->profile->abouts->map(function ($aboutme) {
                 return [
+                    'id' => $aboutme->id,
                     'description' => $aboutme->description,
                 ];
             }),
             'educations' => $candidate->profile->educations->map(function ($education) {
-
                 return [
+                    'id' => $education->id,
                     'degree' => $education->degree,
                     'institution' => $education->institution,
                     'start_date' => $education->start_date,
@@ -165,32 +196,33 @@ class CandidatesController extends Controller
                 }
 
                 return [
+                    'id' => $skill->id,
                     'name' => $skill->name,
                     'level' => $levelString,
                 ];
             }),
             'PersonalProject' => $candidate->profile->projects->map(function ($project) {
-
-
                 return [
+                    'id' => $project->id,
                     'title' => $project->title,
                     'start_date' => $project->start_date,
                     'end_date' => $project->end_date,
-
                     'description' => $project->description,
                 ];
             }),
-            'Certificate' => $candidate->profile->certificates->map(function ($certificates) {
+            'Certificate' => $candidate->profile->certificates->map(function ($certificate) {
                 return [
-                    'title' => $certificates->title,
-                    'provider' => $certificates->provider,
-                    'issueDate' => $certificates->issueDate,
-                    'description' => $certificates->description,
-                    'certificateUrl' => $certificates->certificateUrl,
+                    'id' => $certificate->id,
+                    'title' => $certificate->title,
+                    'provider' => $certificate->provider,
+                    'issueDate' => $certificate->issueDate,
+                    'description' => $certificate->description,
+                    'certificateUrl' => $certificate->certificateUrl,
                 ];
             }),
             'WorkExperience' => $candidate->profile->experiences->map(function ($experience) {
                 return [
+                    'id' => $experience->id,
                     'position' => $experience->position,
                     'company' => $experience->company,
                     'start_date' => $experience->start_date,
@@ -198,12 +230,13 @@ class CandidatesController extends Controller
                     'responsibilities' => $experience->responsibilities,
                 ];
             }),
-            'Award' => $candidate->profile->awards->map(function ($awards) {
+            'Award' => $candidate->profile->awards->map(function ($award) {
                 return [
-                    'title' => $awards->title,
-                    'provider' => $awards->provider,
-                    'issueDate' => $awards->issueDate,
-                    'description' => $awards->description,
+                    'id' => $award->id,
+                    'title' => $award->title,
+                    'provider' => $award->provider,
+                    'issueDate' => $award->issueDate,
+                    'description' => $award->description,
                 ];
             }),
         ];
@@ -216,6 +249,7 @@ class CandidatesController extends Controller
             'status_code' => 200
         ]);
     }
+
 
     public function apply(Request $request, $id)
     {

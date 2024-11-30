@@ -66,12 +66,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Company::class,'users_id','id');
     }
 
-    public function checkApplication(){
-        return DB::table('job_users')->where('users_id', auth()->user()->id)->where('job_id', $this->id)->exists();
+    public function checkApplication()
+    {
+        return $this->belongsToMany(Job::class, 'job_user', 'user_id', 'job_id')->withTimestamps();
     }
 
+
     public function favorites(){
-        return $this->belongsToMany(Job::class, 'favorites', 'job_id', 'users_id')->withTimestamps();
+        return $this->belongsToMany(Job::class, 'favorites', 'users_id', 'job_id')->withTimestamps();
     }
 
     public function checkSaved(){

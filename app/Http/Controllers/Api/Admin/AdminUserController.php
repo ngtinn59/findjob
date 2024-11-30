@@ -26,21 +26,26 @@ class AdminUserController extends Controller
             ], 404);
         }
 
-        // Update user's status to inactive
+        // Cập nhật trạng thái của người dùng thành không hoạt động
         $user->update(['status' => Constant::user_status_inactive]);
+
+        // Xoá tất cả token của người dùng để ngăn không cho họ tiếp tục sử dụng hệ thống
+        $user->tokens()->delete();
+
+        // Định nghĩa nhãn loại tài khoản
         $accountTypeLabels = [
             Constant::user_level_developer => 'Người tìm việc',
             Constant::user_level_employer => 'Người tuyển dụng',
             Constant::user_level_host => 'Admin'
         ];
 
-        // Ánh xạ giá trị status
+        // Định nghĩa trạng thái tài khoản
         $accountTypeStatus = [
             Constant::user_status_active => 'Hoạt động',
             Constant::user_status_inactive => 'Không hoạt động'
         ];
 
-        // Formatted user data
+        // Dữ liệu người dùng được định dạng
         $userData = [
             'id' => $user->id,
             'name' => $user->name,
@@ -59,6 +64,7 @@ class AdminUserController extends Controller
             'status_code' => 200
         ], 200);
     }
+
 
 
     public function unblockUser($userId)

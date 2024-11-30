@@ -129,13 +129,15 @@ class AdminJobController extends Controller
 
     public function index()
     {
-        // Lấy danh sách tất cả công việc từ tất cả các công ty
-        $jobs = \App\Models\Job::all(); // Retrieve all jobs without pagination
+        $jobs = \App\Models\Job::query()
+            ->orderBy('status', 'asc') // Công việc có trạng thái 0 sẽ lên đầu (status = 0)
+            ->orderBy('created_at', 'desc') // Sắp xếp theo ngày tạo mới nhất
+            ->get();
 
         // Map dữ liệu công việc
         $jobsData = $jobs->map(function ($job) {
             return [
-                'id' => $job->id, // Corrected from 'ids' to 'id'
+                'id' => $job->id,
                 'title' => $job->title,
                 'profession' => $job->profession->name,
                 'quantity' => $job->quantity,
@@ -154,6 +156,7 @@ class AdminJobController extends Controller
             'status_code' => 200
         ]);
     }
+
 
 
 

@@ -62,7 +62,6 @@ class ExperiencesController extends Controller
             'company' => 'required',
             'start_date' => 'required|date', // Kiểm tra định dạng ngày
             'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
-            'responsibilities' => 'required',
             'profiles_id' => 'required',
         ], [
             'position.required' => 'Vị trí là bắt buộc.',
@@ -72,7 +71,6 @@ class ExperiencesController extends Controller
             'end_date.required' => 'Ngày kết thúc là bắt buộc.',
             'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
             'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
-            'responsibilities.required' => 'Trách nhiệm là bắt buộc.',
             'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 
@@ -151,7 +149,6 @@ class ExperiencesController extends Controller
             'company' => $request->input('company'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
-            'responsibilities' => $request->input('responsibilities'),
             'profiles_id' => $profile->id
         ];
 
@@ -171,7 +168,6 @@ class ExperiencesController extends Controller
             'end_date.required' => 'Ngày kết thúc là bắt buộc.',
             'end_date.date' => 'Ngày kết thúc phải là định dạng ngày hợp lệ.',
             'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
-            'responsibilities.required' => 'Trách nhiệm là bắt buộc.',
             'profiles_id.required' => 'ID hồ sơ là bắt buộc.',
         ]);
 

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string("title",);
             $table->string("provider",);
             $table->date('issueDate');
-            $table->string('description');
-            $table->string('certificateUrl',);
+            $table->string('description')->nullable();
+            $table->string('certificateUrl',)->nullable();
             $table->foreign('profiles_id')->references('id')->on('profiles')->onDelete('cascade');
             $table->timestamps();
         });

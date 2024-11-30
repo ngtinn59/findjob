@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
     AdminCompanyTypesController,
     AdminController,
     AdminJobController,
+    AdminNotificationController,
     AdminStatsController,
     AdminUserController,
     CitiesController,
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\Admin\{AdminCompaniesController,
     ExperienceLevelsController,
     LanguagesController,
     ProfessionsController,
+    ServerPerformanceReportController,
     WorkplacesController};
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\{CompaniesController,
@@ -85,31 +87,6 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     return response()->json(['message' => 'Email đã được xác minh thành công!']);
 })->middleware(['signed'])->name('verification.verify');
 
-Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-    $user = User::findOrFail($id);
-
-    // Check if the email hash is correct
-    if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
-        return response()->json([
-            'message' => 'Invalid email verification link'
-        ], 400);
-    }
-
-    // Check if the email is already verified
-    if (!$user->hasVerifiedEmail()) {
-        // Mark the email as verified and trigger the Verified event
-        $user->markEmailAsVerified();
-        event(new Verified($user));
-    }
-
-    return response()->json([
-        'message' => 'Email đã được xác minh thành công!'
-    ]);
-})->middleware(['signed'])->name('verification.verify');
-
-
-
-
 
 
 // Route to check if email is verified
@@ -128,15 +105,22 @@ Route::get('/openapi.json', function () {
     return response()->json(['error' => 'OpenAPI JSON file not found'], 404);
 });
 
+
+
+
+Route::get('/keyword', [JobsController::class, 'getTrendingKeywords']);
+
 // Public Routes
-Route::get('/countries', [CountriesController::class, 'index']);
-Route::get('/cities', [CitiesController::class, 'index']);
-Route::get('/company-types', [AdminCompanyTypesController::class, 'index']);
-Route::get('/workplaces', [WorkplacesController::class, 'index']);
+Route::get('/countries', [PublicDataController::class, 'getCountries']);
+Route::get('/cities', [PublicDataController::class, 'getCities']);
+Route::get('/company-types', [PublicDataController::class, 'getCompanyTypes']);
+Route::get('/workplaces', [PublicDataController::class, 'getWorkPlaces']);
 Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
+Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
+Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);
+Route::get('/statistic', [AdminStatsController::class, 'index']);
 
-
-Route::get('/company-sizes', [AdminCompanySizesController::class, 'index']);
+Route::get('/company-sizes', [PublicDataController::class, 'getCompanySizes']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::resource('/districts', DistrictsController::class);
@@ -144,11 +128,16 @@ Route::get('countries/{country}/cities', [CitiesController::class, 'getCitiesByC
 Route::get('cities/{city}/districts', [DistrictsController::class, 'getDistrictsByCity']);
 Route::get('languages', [PublicDataController::class, 'getLanguages']);
 Route::get('professions', [PublicDataController::class, 'getProfessions']);
+
 Route::get('employment-types', [PublicDataController::class, 'getEmploymentTypes']);
 Route::get('education-levels', [PublicDataController::class, 'getEducationLevels']);
 Route::get('desired-levels', [PublicDataController::class, 'getDesiredLevels']);
 Route::get('experience-levels', [PublicDataController::class, 'getExperienceLevels']);
-
+Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
+Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
+Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
+Route::get('/list-jobs', [JobsController::class, 'indexShow']);
+Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
 
 // Auth Routes
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
@@ -162,29 +151,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-cv', [CvsController::class, 'upload']);
     Route::get('/default-cv', [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
+    Route::delete('logout', [AuthController::class, 'logout']);
+    Route::post('/update-name', [AuthController::class, 'updateName']);
 
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
-
     Route::post('messages', [MessageController::class, 'sendMessage']);
+
     Route::get('messages/{userId}', [MessageController::class, 'getMessages']);
     Route::get('messages', [MessageController::class, 'index']);
+    Route::get('messages-employer', [MessageController::class, 'indexEmployer']);
+
     Route::get('applicants/messages', [MessageController::class, 'indexAppliant']);
     Route::get('applicants-users/messages', [MessageController::class, 'indexapplicantuser']);
-
-    Route::get('/list-jobs', [JobsController::class, 'indexShow']);
-    Route::get('/list-jobs/urgent', [JobsController::class, 'indexUrgent']);
-
-    Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
     Route::get('/jobs/search', [JobsController::class, 'search']);
-    Route::get('/list-companies', [CompaniesController::class, 'indexShow']);
-    Route::get('/list-companies/featured', [CompaniesController::class, 'indexFeaturedCompanies']);
+    Route::get('/list-jobs/{job}', [JobsController::class, 'showJob']);
 
-    Route::get('/list-companies/{company}', [CompaniesController::class, 'detailShow']);
+
+
     // Profile Routes
     Route::resource('profile', ProfilesController::class);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{notificationId}', [NotificationController::class, 'deleteNotification']);
 
     Route::prefix('profiles')->group(function () {
         Route::resource('/educations', EducationController::class);
@@ -222,11 +211,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('employer/jobs', JobsController::class);
         Route::get('employer/companies/notifications', [JobsController::class, 'getNotifications']);
         Route::post('employer/companies/notifications/read', [JobsController::class, 'markAsRead']);
+        Route::delete('employer/companies/notifications/{id}', [JobsController::class, 'destroyNotifications']); // Xóa thông báo
 
         Route::post('/jobs/{jobId}/applicants/{userId}/send-email', [EmployerMailController::class, 'sendEmailToApplicant']);
 
         Route::post('/process-application/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
         Route::get('/applications', [JobApplicationController::class, 'index']);
+        Route::get('/applications/{jobId}', [JobApplicationController::class, 'show']);
+
         Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
         Route::get('/statistics', [JobApplicationController::class, 'getStatistics']);
         Route::delete('/jobs/{jobId}/applicants/{userId}', [JobApplicationController::class, 'destroy']);
@@ -241,8 +233,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('employer/saved-candidates/{id}', [CandidatesController::class, 'show']);
         Route::resource('employer/companies', CompaniesController::class);
         Route::post('/employer/candidates/{userId}/send-email', [CandidatesController::class, 'sendEmailToCandidate']);
-
-
     });
 
     Route::middleware(CheckAdminRole::class)->prefix('admin')->group(function () {
@@ -275,8 +265,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         //Thống kê
 
-        Route::get('/statistics', [AdminStatsController::class, 'index']);
         Route::get('/statistics/salary-report', [AdminStatsController::class, 'generateSalaryReport']);
+        Route::get('/statistics/companies-report', [AdminStatsController::class, 'generateCompanyReport']);
+        Route::get('/statistics/objective-report', [AdminStatsController::class, 'generateObjectiveStats']);
+
+        Route::get('/report/server-performance', [ServerPerformanceReportController::class, 'getServerPerformance']);
 
         Route::resource('/languages', LanguagesController::class);
 
@@ -299,6 +292,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Đánh dấu công ty là nổi bật
         Route::post('companies/{companyId}/mark-as-hot', [AdminCompaniesController::class, 'markAsHot']);
-
+        Route::post('companies/{companyId}/mark-as-not-hot', [AdminCompaniesController::class, 'markAsNotHot']);
+        Route::get('/notifications', [AdminNotificationController::class, 'index']); // Lấy danh sách thông báo
+        Route::post('/notifications/read/{id}', [AdminNotificationController::class, 'markAsRead']); // Đọc thông báo
+        Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']); // Xóa thông báo
     });
 });

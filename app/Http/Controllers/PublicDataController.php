@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanySize;
 use App\Models\DesiredLevel;
 use App\Models\EducationLevel;
 use App\Models\EmploymentType;
 use App\Models\ExperienceLevel;
 use App\Models\Language;
+use App\Models\City;
+use App\Models\Country;
+use App\Models\CompanyType;
+
 use App\Models\Profession;
+use App\Models\Workplace;
 use Illuminate\Http\Request;
 
 class PublicDataController extends Controller
@@ -236,5 +242,179 @@ class PublicDataController extends Controller
             ], 500); // HTTP status 500: Internal Server Error
         }
     }
+
+    public function getCountries()
+    {
+        try {
+            $countries = Country::all();
+
+            if ($countries->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có quốc gia nào được tìm thấy',
+                    'data' => []
+                ], 404);
+            }
+
+            $countriesData = $countries->map(function ($country) {
+                return [
+                    'id' => $country->id,
+                    'name' => $country->name
+                ];
+            });
+
+            return response()->json([
+                'message' => 'Lấy danh sách quốc gia thành công',
+                'data' => $countriesData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách quốc gia',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getCities()
+    {
+        try {
+            $cities = City::all();
+
+            if ($cities->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có thành phố nào được tìm thấy',
+                    'data' => []
+                ], 404);
+            }
+
+            $citiesData = $cities->map(function ($city) {
+                return [
+                    'id' => $city->id,
+                    'name' => $city->name
+                ];
+            });
+
+            return response()->json([
+                'message' => 'Lấy danh sách thành phố thành công',
+                'data' => $citiesData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách thành phố',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getCompanyTypes()
+    {
+        try {
+            $companyTypes = CompanyType::all();
+
+            if ($companyTypes->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có loại hình công ty nào được tìm thấy',
+                    'data' => []
+                ], 404);
+            }
+
+            $companyTypesData = $companyTypes->map(function ($companyType) {
+                return [
+                    'id' => $companyType->id,
+                    'name' => $companyType->name
+                ];
+            });
+
+            return response()->json([
+                'message' => 'Lấy danh sách loại hình công ty thành công',
+                'data' => $companyTypesData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách loại hình công ty',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+    }
+
+    public function getCompanySizes()
+    {
+        try {
+            // Lấy tất cả dữ liệu từ bảng company_sizes
+            $companySizes = CompanySize::all();
+
+            // Kiểm tra nếu không có dữ liệu
+            if ($companySizes->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có quy mô công ty nào được tìm thấy',
+                    'data' => []
+                ], 404); // HTTP status 404: Not Found
+            }
+
+            // Map dữ liệu company_sizes
+            $companySizesData = $companySizes->map(function ($companySize) {
+                return [
+                    'id' => $companySize->id,
+                    'name' => $companySize->name
+                ];
+            });
+
+            // Trả về dữ liệu thành công
+            return response()->json([
+                'message' => 'Lấy danh sách quy mô công ty thành công',
+                'data' => $companySizesData
+            ], 200); // HTTP status 200: OK
+
+        } catch (\Exception $e) {
+            // Bắt lỗi và trả về thông báo lỗi
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách quy mô công ty',
+                'error' => $e->getMessage()
+            ], 500); // HTTP status 500: Internal Server Error
+        }
+    }
+
+
+
+    public function getWorkPlaces()
+    {
+        try {
+            // Lấy tất cả dữ liệu từ bảng workplaces
+            $workplaces = Workplace::all();
+
+            // Kiểm tra nếu không có dữ liệu
+            if ($workplaces->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có nơi làm việc nào được tìm thấy',
+                    'data' => []
+                ], 404); // HTTP status 404: Not Found
+            }
+
+            // Map dữ liệu workplaces
+            $workplacesData = $workplaces->map(function ($workplace) {
+                return [
+                    'id' => $workplace->id,
+                    'name' => $workplace->name
+                ];
+            });
+
+            // Trả về dữ liệu thành công
+            return response()->json([
+                'message' => 'Lấy danh sách nơi làm việc thành công',
+                'data' => $workplacesData
+            ], 200); // HTTP status 200: OK
+
+        } catch (\Exception $e) {
+            // Bắt lỗi và trả về thông báo lỗi
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách nơi làm việc',
+                'error' => $e->getMessage()
+            ], 500); // HTTP status 500: Internal Server Error
+        }
+    }
+
 
 }

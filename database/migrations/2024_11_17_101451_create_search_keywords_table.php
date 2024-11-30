@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('aboutme', function (Blueprint $table) {
+        Schema::create('search_keywords', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('profiles_id');
-            $table->text('description')->nullable();
-            $table->foreign('profiles_id')->references('id')->on('profiles')->onDelete('cascade');
+            $table->string('keyword')->unique();
+            $table->integer('search_count')->default(0);
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('aboutme');
+        Schema::dropIfExists('search_keywords');
     }
 };

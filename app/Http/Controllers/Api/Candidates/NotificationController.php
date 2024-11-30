@@ -20,17 +20,13 @@ class NotificationController extends Controller
         $customNotifications = $notifications->map(function ($notification) {
             return [
                 'id' => $notification->id,
-                'data' => $notification->data, // Dữ liệu thông báo
-                'read' => $notification->read_at ? true : false, // Kiểm tra xem thông báo đã đọc hay chưa
+                'message' => $notification->data['message'], // Dữ liệu thông báo
+                'read' => $notification->read_at,
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'), // Định dạng thời gian
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'notifications' => $customNotifications, // Sử dụng dữ liệu tùy chỉnh
-            'status_code' => 200,
-        ], 200);
+        return response()->json($customNotifications);
     }
 
 
@@ -49,17 +45,12 @@ class NotificationController extends Controller
             // Tùy chỉnh dữ liệu thông báo giống như trong hàm index
             $customNotification = [
                 'id' => $notification->id,
-                'data' => $notification->data, // Dữ liệu thông báo
+                'message' => $notification->data['message'], // Dữ liệu thông báo
                 'read' => true, // Đánh dấu là đã đọc
                 'created_at' => $notification->created_at->format('Y-m-d H:i:s'), // Định dạng thời gian
             ];
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Thông báo đã được đánh dấu là đã đọc.',
-                'notification' => $customNotification, // Trả về dữ liệu thông báo tùy chỉnh
-                'status_code' => 200,
-            ], 200);
+            return response()->json($customNotification,200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -75,5 +66,39 @@ class NotificationController extends Controller
             ], 500);
         }
     }
+
+    public function deleteNotification($notificationId)
+    {
+        try {
+            // Lấy người dùng hiện tại
+            $user = Auth::user();
+
+            // Tìm thông báo theo ID
+            $notification = $user->notifications()->findOrFail($notificationId);
+
+            // Xóa thông báo
+            $notification->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thông báo đã được xóa thành công.',
+                'status_code' => 200,
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông báo.',
+                'status_code' => 404,
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa thông báo.',
+                'error' => $e->getMessage(),
+                'status_code' => 500,
+            ], 500);
+        }
+    }
+
 
 }

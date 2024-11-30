@@ -84,11 +84,13 @@ class MessageController extends Controller
     {
         $userId = Auth::id();
 
-        $messages = Message::with(['sender', 'receiver'])
+        // Load thông tin tin nhắn và mối quan hệ
+        $messages = Message::with(['sender.companies', 'receiver.companies'])
             ->where('sender_id', $userId)
             ->orWhere('receiver_id', $userId)
             ->get();
 
+        // Nhóm hội thoại theo người dùng khác
         $conversations = $messages->groupBy(function ($message) use ($userId) {
             return $message->sender_id === $userId ? $message->receiver_id : $message->sender_id;
         })->map(function ($group) use ($userId) {
@@ -99,7 +101,39 @@ class MessageController extends Controller
                 'id' => $otherUser->id,
                 'name' => $otherUser->name,
                 'email' => $otherUser->email,
-                'file_url' => $lastMessage->file_path ? url('uploads/' . $lastMessage->file_path) : null,
+                'logo' => $otherUser->companies?->logo ? url('uploads/images/' . $otherUser->companies->logo) : null,
+                'last_message' => $lastMessage->message,
+                'last_message_time' => $lastMessage->created_at->toDateTimeString(),
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $conversations,
+        ]);
+    }
+
+    public function indexEmployer(): \Illuminate\Http\JsonResponse
+    {
+        $userId = Auth::id();
+
+        // Load thông tin tin nhắn và mối quan hệ với profile của người gửi/nhận
+        $messages = Message::with(['sender.profile', 'receiver.profile'])
+            ->where('sender_id', $userId)
+            ->orWhere('receiver_id', $userId)
+            ->get();
+
+        // Nhóm hội thoại theo người dùng khác
+        $conversations = $messages->groupBy(function ($message) use ($userId) {
+            return $message->sender_id === $userId ? $message->receiver_id : $message->sender_id;
+        })->map(function ($group) use ($userId) {
+            $lastMessage = $group->sortByDesc('created_at')->first();
+            $otherUser = $lastMessage->sender_id === $userId ? $lastMessage->receiver : $lastMessage->sender;
+
+            return [
+                'id' => $otherUser->id,
+                'name' => $otherUser->name,
+                'email' => $otherUser->email,
+                'logo' => $otherUser->profile?->image ? url('uploads/images/' . $otherUser->profile->image) : null, // Lấy logo nếu tồn tại
                 'last_message' => $lastMessage->message,
                 'last_message_time' => $lastMessage->created_at->toDateTimeString(),
             ];
@@ -126,27 +160,32 @@ class MessageController extends Controller
         $companyId = $user->companies->id;
 
         // Lấy tất cả các công việc thuộc về công ty của người dùng hiện tại với phân trang
-        $jobs = Job::with(['applicants' => function ($query) {
-            // Bao gồm các trường trong bảng pivot
-            $query->withPivot('status', 'cv', 'name', 'phone', 'email', 'created_at');
-        }])->where('company_id', $companyId)->paginate(10);
+        $jobs = Job::with([
+            'applicants' => function ($query) {
+                $query->withPivot('status', 'cv', 'name', 'phone', 'email', 'created_at')
+                    ->with('profile'); // Tải thêm thông tin profile
+            }
+        ])->where('company_id', $companyId)->paginate(10);
 
-        // Chuyển đổi dữ liệu công việc và ứng viên
-        $jobsData = $jobs->map(function ($job) {
-            return [
-                'applicants' => $job->applicants->map(function ($applicant) {
-                    return [
-                        'id' => $applicant->id,
-                        'name' => $applicant->pivot->name,
-                    ];
-                }),
-            ];
+
+        // Tùy chỉnh dữ liệu ứng viên
+        $formattedApplicants = $jobs->flatMap(function ($job) {
+            return $job->applicants->map(function ($applicant) {
+                return [
+                    'id' => $applicant->id,
+                    'name' => $applicant->pivot->name,
+                    'logo' => $applicant->profile?->image ? url('uploads/images/' . $applicant->profile->image) : null, // Lấy logo nếu tồn tại
+                ];
+            });
         });
+
+        // Loại bỏ các bản ghi trùng lặp dựa trên 'id'
+        $uniqueApplicants = $formattedApplicants->unique('id')->values();
 
         return response()->json([
             'success' => true,
-            'message' => 'Lấy dữ liệu thành công',
-            'data' => $jobsData,
+            'message' => 'success',
+            'data' => $uniqueApplicants,
             'pagination' => [
                 'current_page' => $jobs->currentPage(),
                 'last_page' => $jobs->lastPage(),
@@ -156,8 +195,9 @@ class MessageController extends Controller
                 'previous_page_url' => $jobs->previousPageUrl(),
             ],
             'status_code' => 200
-        ]);
+        ], 200);
     }
+
 
     public function indexapplicantuser()
     {
@@ -166,25 +206,27 @@ class MessageController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        // Lấy các công việc mà người dùng đã ứng tuyển
         $appliedJobs = $user->jobs()->withPivot('status')->get();
 
+        // Map dữ liệu công việc sang thông tin công ty và user
         $formattedJobs = $appliedJobs->map(function ($job) {
             $company = $job->company()->first();
-
-
             return [
-                'id' => $company->User->id,
-                'name' => $company->User->name
+                'id' => $company->user->id,
+                'logo' => $company->logo ? asset('uploads/images/' . $company->logo) : null,
+                'name' => $company->user->name
             ];
         });
+
+        // Loại bỏ các bản ghi trùng lặp dựa trên 'id'
+        $uniqueUsers = $formattedJobs->unique('id')->values();
 
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => $formattedJobs,
+            'data' => $uniqueUsers,
             'status_code' => 200
         ], 200);
     }
-
-
 }

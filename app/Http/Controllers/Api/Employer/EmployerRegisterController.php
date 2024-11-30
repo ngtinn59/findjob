@@ -120,7 +120,6 @@ class EmployerRegisterController extends Controller
                     'country_id' => $validatedData['country_id'],
                     'city_id'    => $validatedData['city_id'],
                     'district_id'    => $validatedData['district_id'],
-
                     'company_name' => $validatedData['company_name'],
                     'company_email' => $validatedData['company_email'],
                     'phone'       => $validatedData['phone'],
