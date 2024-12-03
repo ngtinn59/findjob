@@ -42,7 +42,7 @@ This application bridges the gap between job seekers and employers, streamlining
 
 ---
 
-### For Employers (Recruiters)
+## Features for Employers (Recruiters)
 - **Login**: Securely access your account.
 - **Register**: Create a new recruiter account.
 - **Logout**: Safely exit your account.
@@ -60,6 +60,10 @@ This application bridges the gap between job seekers and employers, streamlining
     - Communicate with applicants via email about their application status.
 - **Search for Suitable Candidates**:
     - Find applicants that match your job criteria.
+- **Save Candidate Profiles**:
+    - Bookmark interesting candidate profiles for future reference.
+- **View Saved Candidate Profiles**:
+    - Access and manage the list of bookmarked candidate profiles.
 - **Update Company Profile**:
     - Maintain company information and branding.
 - **Real-Time Chat with Applicants**:
@@ -105,8 +109,7 @@ This application bridges the gap between job seekers and employers, streamlining
 - **Backend**: Laravel API.
 - **Database**: MySQL.
 - **Real-Time Features**: WebSocket ( Pusher ).
-- **CI/CD**: Docker, GitHub Actions.
-
+- **Docker**
 ---
 
 ## Installation and Setup
@@ -115,6 +118,7 @@ This application bridges the gap between job seekers and employers, streamlining
    git clone https://github.com/ngtinn59/findjob.git
    cd findjob
    docker run --rm -v $(pwd):/app composer install
+   
    docker-compose up -d
    cp .env.example .env
    nano .env
