@@ -100,7 +100,7 @@
     <ul>
         <li><strong>Công ty:</strong> {{ $companyName }}</li>
         <li><strong>Địa chỉ:</strong> {{ $address }}</li>
-        <li><strong>Mức lương:</strong> {{ $salary_from }} - {{ $salary_to }}</li>
+        <li><strong>Mức lương:</strong> {{ number_format($salary_from, 0, ',', '.') }}₫ - {{ number_format($salary_to, 0, ',', '.') }}₫</li>
     </ul>
     <p>Chúng tôi đánh giá cao sự quan tâm của bạn và sẽ liên hệ với bạn trong thời gian sớm nhất để thông báo về các bước tiếp theo của quá trình tuyển dụng.</p>
     <div style="text-align: center;">

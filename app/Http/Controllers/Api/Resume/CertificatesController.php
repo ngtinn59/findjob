@@ -64,14 +64,18 @@ class CertificatesController extends Controller
             'title' => 'required',
             'profiles_id' => 'required',
             'provider' => 'required',
-            'issueDate' => 'required|date', // Bạn có thể thêm yêu cầu định dạng ngày
+            'issueDate' => 'required|date', // Yêu cầu định dạng ngày
+            'description' => 'required',
+            'certificateUrl' => 'required|url' // Yêu cầu định dạng URL
+            
         ], [
             'title.required' => 'Tiêu đề không được để trống.',
-            'profiles_id.required' => 'ID hồ sơ không được để trống.',
             'provider.required' => 'Nhà cung cấp không được để trống.',
             'issueDate.required' => 'Ngày cấp không được để trống.',
             'issueDate.date' => 'Ngày cấp phải đúng định dạng ngày.',
             'description.required' => 'Mô tả không được để trống.',
+            'certificateUrl.required' => 'URL chứng chỉ không được để trống.',
+            'certificateUrl.url' => 'URL chứng chỉ phải đúng định dạng URL.'
         ]);
 
         if ($validator->fails()) {

@@ -61,7 +61,8 @@ class ExperiencesController extends Controller
             'position' => 'required',
             'company' => 'required',
             'start_date' => 'required|date', // Kiểm tra định dạng ngày
-            'end_date' => 'required|date|after:start_date', // Kiểm tra ngày kết thúc sau ngày bắt đầu
+            'end_date' => 'required|date|after:start_date',
+            'responsibilities' => 'required',
             'profiles_id' => 'required',
         ], [
             'position.required' => 'Vị trí là bắt buộc.',
@@ -149,6 +150,7 @@ class ExperiencesController extends Controller
             'company' => $request->input('company'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
+            'responsibilities' => $request->input('responsibilities'),
             'profiles_id' => $profile->id
         ];
 

@@ -734,7 +734,7 @@ class JobsController extends Controller
             foreach ($objectives as $objective) {
                 // So khớp vị trí mong muốn
                 if ($objective->desired_position && stripos($job->title, $objective->desired_position) !== false) {
-                    $score += 50;
+                    $score += 30;
                 }
 
                 // So khớp ngành nghề
